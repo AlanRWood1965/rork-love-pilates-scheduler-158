@@ -112,7 +112,7 @@ export default function ClassesScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Class Levels</Text>
+        <Text style={styles.sectionTitle}>Class Level</Text>
         <Text style={styles.sectionSubtitle}>
           Tap a level to see all upcoming classes at that level
         </Text>
