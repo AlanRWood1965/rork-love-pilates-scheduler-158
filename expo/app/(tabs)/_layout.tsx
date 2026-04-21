@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { CalendarDays, PersonStanding, Info, Mail } from "lucide-react-native";
+import { CalendarDays, PersonStanding, Mail } from "lucide-react-native";
 import React from "react";
 
 import Colors from "@/constants/colors";
@@ -33,13 +33,6 @@ export default function TabLayout() {
         options={{
           title: "Classes",
           tabBarIcon: ({ color, size }) => <PersonStanding size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="about"
-        options={{
-          title: "About",
-          tabBarIcon: ({ color, size }) => <Info size={size} color={color} />,
         }}
       />
       <Tabs.Screen
