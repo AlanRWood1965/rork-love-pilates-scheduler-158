@@ -31,7 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="classes"
         options={{
-          title: "Classes",
+          title: "Choose my class",
           tabBarIcon: ({ color, size }) => <PersonStanding size={size} color={color} />,
         }}
       />
