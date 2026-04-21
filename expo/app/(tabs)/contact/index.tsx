@@ -508,15 +508,6 @@ export default function ContactScreen() {
               openUrl('https://www.instagram.com/lovepilatesglasgow');
             }}
           />
-          <InfoCard
-            icon={<Calendar size={20} color={Colors.primary} />}
-            title="Book Online"
-            subtitle="bookwhen.com/karenwoodpilates"
-            onPress={() => {
-              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              openUrl('https://bookwhen.com/karenwoodpilates');
-            }}
-          />
         </View>
 
         <Pressable
@@ -530,12 +521,7 @@ export default function ContactScreen() {
           <Text style={styles.ctaText}>Book a Class</Text>
         </Pressable>
 
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-          <Heart size={14} color={Colors.primary} fill={Colors.primary} />
-          <Text style={styles.footerText}>
-            Love Pilates — We reply within 1–2 working days
-          </Text>
-        </View>
+        <View style={{ paddingBottom: insets.bottom + 20 }} />
       </ScrollView>
 
       {sent && (
