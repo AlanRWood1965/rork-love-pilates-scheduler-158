@@ -4,7 +4,10 @@ import { PilatesClass, ClassType, ClassLevel } from '@/types';
 const CACHE_KEY = 'bookwhen_events_cache';
 
 const API_BASE = 'https://api.bookwhen.com/v2';
-const API_KEY = process.env.EXPO_PUBLIC_BOOKWHEN_API_KEY ?? '';
+const FALLBACK_API_KEY = 'aoe13tanfjsdc2jb0lnybwxy3d3o';
+const API_KEY = process.env.EXPO_PUBLIC_BOOKWHEN_API_KEY && process.env.EXPO_PUBLIC_BOOKWHEN_API_KEY.length > 0
+  ? process.env.EXPO_PUBLIC_BOOKWHEN_API_KEY
+  : FALLBACK_API_KEY;
 const CALENDAR_SLUG = 'karenwoodpilates';
 
 interface BookwhenEventAttributes {
@@ -149,6 +152,12 @@ export async function fetchBookwhenEvents(daysAhead: number = 30): Promise<Pilat
   toDate.setDate(toDate.getDate() + daysAhead);
   const toStr = formatDate(toDate);
 
+  if (!API_KEY) {
+    console.log('[BookWhen] Missing API key');
+    throw new Error('BookWhen API key not configured');
+  }
+
+  console.log('[BookWhen] Using API key (len):', API_KEY.length);
   const authHeader = 'Basic ' + btoa(API_KEY + ':');
   const baseUrl = `${API_BASE}/events?filter[from]=${fromDate}&filter[to]=${toStr}&include=tickets&page[size]=100`;
 
