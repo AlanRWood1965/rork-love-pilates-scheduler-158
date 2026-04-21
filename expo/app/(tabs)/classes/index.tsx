@@ -112,16 +112,6 @@ export default function ClassesScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Class Types</Text>
-        <Text style={styles.sectionSubtitle}>
-          We offer four types of apparatus and mat classes at Love Pilates
-        </Text>
-        {classTypeInfos.map((info) => (
-          <ClassTypeCard key={info.type} info={info} />
-        ))}
-      </View>
-
-      <View style={styles.levelSection}>
         <Text style={styles.sectionTitle}>Class Levels</Text>
         <Text style={styles.sectionSubtitle}>
           Tap a level to see all upcoming classes at that level
@@ -153,6 +143,16 @@ export default function ClassesScreen() {
             </Pressable>
           ))}
         </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Class Types</Text>
+        <Text style={styles.sectionSubtitle}>
+          We offer four types of apparatus and mat classes at Love Pilates
+        </Text>
+        {classTypeInfos.map((info) => (
+          <ClassTypeCard key={info.type} info={info} />
+        ))}
       </View>
 
       <View style={{ paddingBottom: insets.bottom + 30 }} />
@@ -307,10 +307,6 @@ const styles = StyleSheet.create({
   expandText: {
     fontSize: 13,
     fontWeight: '600' as const,
-  },
-  levelSection: {
-    paddingTop: 24,
-    paddingHorizontal: 16,
   },
   levelGrid: {
     gap: 12,
