@@ -1,34 +1,19 @@
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking, Platform } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import {
   Heart,
-  MapPin,
-  Globe,
   ExternalLink,
   Award,
   Users,
   Clock,
-  Phone,
-  Mail,
-  Calendar,
   Home,
-  Instagram,
 } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
 
 import { useRouter } from 'expo-router';
 
 import Colors from '@/constants/colors';
-
-function openUrl(url: string) {
-  if (Platform.OS === 'web') {
-    window.open(url, '_blank');
-  } else {
-    void Linking.openURL(url);
-  }
-}
 
 function InfoCard({ icon, title, subtitle, onPress }: {
   icon: React.ReactNode;
@@ -54,16 +39,6 @@ function InfoCard({ icon, title, subtitle, onPress }: {
 export default function AboutScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-
-  const openWebsite = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    openUrl('https://www.karenwoodpilates.com');
-  }, []);
-
-  const openBooking = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    openUrl('https://bookwhen.com/karenwoodpilates');
-  }, []);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -126,11 +101,6 @@ export default function AboutScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Studio Details</Text>
         <InfoCard
-          icon={<MapPin size={20} color={Colors.primary} />}
-          title="Location"
-          subtitle="18A Crossveggate, Milngavie, G62 6RA"
-        />
-        <InfoCard
           icon={<Users size={20} color={Colors.primary} />}
           title="Small Classes"
           subtitle="Personalised attention in every session"
@@ -139,45 +109,6 @@ export default function AboutScreen() {
           icon={<Clock size={20} color={Colors.primary} />}
           title="Class Duration"
           subtitle="Morning and evening classes available"
-        />
-        <InfoCard
-          icon={<Globe size={20} color={Colors.primary} />}
-          title="Visit Our Website"
-          subtitle="www.karenwoodpilates.com"
-          onPress={openWebsite}
-        />
-        <InfoCard
-          icon={<Phone size={20} color={Colors.primary} />}
-          title="Phone"
-          subtitle="07764 359760"
-          onPress={() => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            openUrl('tel:07764359760');
-          }}
-        />
-        <InfoCard
-          icon={<Mail size={20} color={Colors.primary} />}
-          title="Email"
-          subtitle="support@karenwoodpilates.co.uk"
-          onPress={() => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            openUrl('mailto:support@karenwoodpilates.co.uk');
-          }}
-        />
-        <InfoCard
-          icon={<Instagram size={20} color={Colors.primary} />}
-          title="Instagram"
-          subtitle="@lovepilatesglasgow"
-          onPress={() => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            openUrl('https://www.instagram.com/lovepilatesglasgow');
-          }}
-        />
-        <InfoCard
-          icon={<Calendar size={20} color={Colors.primary} />}
-          title="Book Online"
-          subtitle="bookwhen.com/karenwoodpilates"
-          onPress={openBooking}
         />
       </View>
 
@@ -196,13 +127,6 @@ export default function AboutScreen() {
           </View>
         ))}
       </View>
-
-      <Pressable
-        onPress={openBooking}
-        style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaPressed]}
-      >
-        <Text style={styles.ctaText}>Book a Class</Text>
-      </Pressable>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
         <Heart size={16} color={Colors.primary} fill={Colors.primary} />

@@ -25,6 +25,11 @@ import {
   X,
   Heart,
   Home,
+  MapPin,
+  Globe,
+  Instagram,
+  ExternalLink,
+  Calendar,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as MailComposer from 'expo-mail-composer';
@@ -33,6 +38,37 @@ import { router } from 'expo-router';
 import Colors from '@/constants/colors';
 
 const STUDIO_EMAIL = 'support@karenwoodpilates.co.uk';
+
+function openUrl(url: string) {
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined') {
+      window.open(url, '_blank');
+      return;
+    }
+  }
+  void Linking.openURL(url);
+}
+
+function InfoCard({ icon, title, subtitle, onPress }: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [infoStyles.infoCard, pressed && onPress && infoStyles.infoCardPressed]}
+    >
+      <View style={infoStyles.infoIconWrap}>{icon}</View>
+      <View style={infoStyles.infoTextWrap}>
+        <Text style={infoStyles.infoTitle}>{title}</Text>
+        <Text style={infoStyles.infoSubtitle}>{subtitle}</Text>
+      </View>
+      {onPress && <ExternalLink size={16} color={Colors.textMuted} />}
+    </Pressable>
+  );
+}
 
 type EnquiryType =
   | 'General Enquiry'
@@ -429,6 +465,71 @@ export default function ContactScreen() {
           </Text>
         </View>
 
+        <View style={styles.detailsSection}>
+          <Text style={styles.detailsTitle}>Get in Touch</Text>
+          <InfoCard
+            icon={<MapPin size={20} color={Colors.primary} />}
+            title="Location"
+            subtitle="18A Crossveggate, Milngavie, G62 6RA"
+          />
+          <InfoCard
+            icon={<Globe size={20} color={Colors.primary} />}
+            title="Visit Our Website"
+            subtitle="www.karenwoodpilates.com"
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              openUrl('https://www.karenwoodpilates.com');
+            }}
+          />
+          <InfoCard
+            icon={<Phone size={20} color={Colors.primary} />}
+            title="Phone"
+            subtitle="07764 359760"
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              openUrl('tel:07764359760');
+            }}
+          />
+          <InfoCard
+            icon={<Mail size={20} color={Colors.primary} />}
+            title="Email"
+            subtitle="support@karenwoodpilates.co.uk"
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              openUrl('mailto:support@karenwoodpilates.co.uk');
+            }}
+          />
+          <InfoCard
+            icon={<Instagram size={20} color={Colors.primary} />}
+            title="Instagram"
+            subtitle="@lovepilatesglasgow"
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              openUrl('https://www.instagram.com/lovepilatesglasgow');
+            }}
+          />
+          <InfoCard
+            icon={<Calendar size={20} color={Colors.primary} />}
+            title="Book Online"
+            subtitle="bookwhen.com/karenwoodpilates"
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              openUrl('https://bookwhen.com/karenwoodpilates');
+            }}
+          />
+        </View>
+
+        <Pressable
+          onPress={() => {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            openUrl('https://bookwhen.com/karenwoodpilates');
+          }}
+          style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaPressed]}
+          testID="contact-book-class-cta"
+        >
+          <Text style={styles.ctaText}>Book a Class</Text>
+        </Pressable>
+
         <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
           <Heart size={14} color={Colors.primary} fill={Colors.primary} />
           <Text style={styles.footerText}>
@@ -731,5 +832,79 @@ const styles = StyleSheet.create({
   },
   toastClose: {
     padding: 4,
+  },
+  detailsSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 4,
+  },
+  detailsTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 14,
+  },
+  ctaButton: {
+    backgroundColor: Colors.primary,
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  ctaPressed: {
+    opacity: 0.85,
+  },
+  ctaText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: Colors.textLight,
+    letterSpacing: 0.3,
+  },
+});
+
+const infoStyles = StyleSheet.create({
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 8,
+    gap: 14,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  infoCardPressed: {
+    opacity: 0.7,
+  },
+  infoIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.primary + '12',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoTextWrap: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  infoSubtitle: {
+    fontSize: 13,
+    color: Colors.textMuted,
   },
 });
