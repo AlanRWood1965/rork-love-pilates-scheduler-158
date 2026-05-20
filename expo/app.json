@@ -22,7 +22,9 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.2t98u91r17ze6wqptjjfj"
+      "package": "com.lovepilates.scheduler",
+      "versionCode": 1,
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
