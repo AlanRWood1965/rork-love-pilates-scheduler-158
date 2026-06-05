@@ -265,11 +265,12 @@ export default function ScheduleScreen() {
                 decelerationRate="fast"
                 snapToInterval={undefined}
               >
-                {/* Booked chip — fully independent from class type */}
+                {/* Booked chip — mutually exclusive with class type AND level */}
                 <Pressable
                   onPress={() => {
                     void Haptics.selectionAsync();
                     setSelectedType(null);
+                    setSelectedLevel(null);
                     setShowBookedOnly((prev) => prev ? null : 'Booked');
                   }}
                   style={[
@@ -310,7 +311,12 @@ export default function ScheduleScreen() {
                 label="Level"
                 options={LEVELS}
                 selected={selectedLevel}
-                onSelect={setSelectedLevel}
+                onSelect={(option) => {
+                  if (option !== null) {
+                    setShowBookedOnly(null);
+                  }
+                  setSelectedLevel(option);
+                }}
                 colorMap={levelColorMap}
               />
             </View>
