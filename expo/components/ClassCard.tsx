@@ -1,12 +1,20 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated, Alert } from 'react-native';
-import { Clock, Users, XCircle, Heart, CheckCircle2 } from 'lucide-react-native';
+import { Clock, Users, XCircle, Heart, CheckCircle2, Calendar } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Colors from '@/constants/colors';
 import { PilatesClass, ClassType } from '@/types';
 import { useFavourites } from '@/providers/FavouritesProvider';
 import { useBookings } from '@/providers/BookingsProvider';
+
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function formatDateShort(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${DAY_SHORT[d.getDay()]}, ${d.getDate()} ${MONTH_SHORT[d.getMonth()]}`;
+}
 
 const classTypeColors: Record<ClassType, string> = {
   Mat: Colors.mat,
@@ -25,9 +33,10 @@ const levelColors: Record<string, string> = {
 interface ClassCardProps {
   item: PilatesClass;
   onPress: (item: PilatesClass) => void;
+  showDate?: boolean;
 }
 
-function ClassCard({ item, onPress }: ClassCardProps) {
+function ClassCard({ item, onPress, showDate = false }: ClassCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const { isFavourite, toggleFavourite } = useFavourites();
   const { isBooked, markAsUnbooked } = useBookings();
@@ -93,6 +102,12 @@ function ClassCard({ item, onPress }: ClassCardProps) {
         <View style={styles.cardContent}>
           <View style={styles.topRow}>
             <View style={styles.timeContainer}>
+              {showDate && (
+                <View style={styles.dateChip}>
+                  <Calendar size={12} color={Colors.textSecondary} />
+                  <Text style={styles.dateChipText}>{formatDateShort(item.date)}</Text>
+                </View>
+              )}
               <Clock size={14} color={isCancelled ? Colors.textMuted : Colors.textSecondary} />
               <Text style={[styles.time, isCancelled && styles.cancelledText]}>{item.time}</Text>
             </View>
@@ -199,7 +214,22 @@ const styles = StyleSheet.create({
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
+    flexWrap: 'wrap' as const,
+  },
+  dateChip: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    backgroundColor: Colors.surfaceAlt,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  dateChipText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '600' as const,
   },
   time: {
     fontSize: 13,

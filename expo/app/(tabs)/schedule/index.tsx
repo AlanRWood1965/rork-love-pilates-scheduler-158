@@ -183,8 +183,8 @@ export default function ScheduleScreen() {
   }, [refetch]);
 
   const renderItem = useCallback(({ item }: { item: PilatesClass }) => {
-    return <ClassCard item={item} onPress={handleClassPress} />;
-  }, [handleClassPress]);
+    return <ClassCard item={item} onPress={handleClassPress} showDate={showBookedOnly !== null} />;
+  }, [handleClassPress, showBookedOnly]);
 
   const headerTop = Platform.OS === 'web' ? 12 : insets.top + 8;
 
