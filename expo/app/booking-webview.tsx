@@ -1,16 +1,111 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform, Alert } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView, WebViewNavigation } from 'react-native-webview';
+import { WebView, WebViewNavigation, WebViewMessageEvent } from 'react-native-webview';
 import { X, ChevronLeft, ChevronRight, RotateCw, CheckCircle2, XCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Colors from '@/constants/colors';
 import { useBookings } from '@/providers/BookingsProvider';
 
-/** Patterns that indicate a successful booking on Bookwhen */
-const CONFIRMATION_PATTERNS = [
+/**
+ * Injected JavaScript that watches for booking confirmation or cancellation
+ * on the Bookwhen page and posts a message back to React Native.
+ *
+ * Strategy:
+ * 1. Poll the DOM for confirmation/cancellation text indicators
+ * 2. Also watch for page visibility changes (user may return after payment)
+ * 3. Post 'booking-confirmed' or 'booking-cancelled' when detected
+ */
+const INJECTED_OBSERVER = `
+(function() {
+  if (window.__rorkBookingObserver) return;
+  window.__rorkBookingObserver = true;
+
+  var CONFIRMATION_SELECTORS = [
+    '[data-testid="confirmation"]',
+    '.confirmation-page',
+    '.booking-confirmed',
+    '.booking-confirmation',
+    '.thank-you',
+    '.order-confirmed',
+    '.receipt-page',
+  ];
+
+  var CONFIRMATION_TEXTS = [
+    'booking confirmed',
+    'booking complete',
+    'thank you for your booking',
+    'your booking has been confirmed',
+    'you are booked',
+    'you\u2019re booked',
+    'you're booked',
+    'order confirmed',
+    'order complete',
+    'booking successful',
+  ];
+
+  var CANCELLATION_TEXTS = [
+    'booking cancelled',
+    'booking canceled',
+    'cancellation confirmed',
+    'your booking has been cancelled',
+    'your booking has been canceled',
+    'refund processed',
+  ];
+
+  function checkPage() {
+    // Check for known confirmation selectors
+    for (var i = 0; i < CONFIRMATION_SELECTORS.length; i++) {
+      var el = document.querySelector(CONFIRMATION_SELECTORS[i]);
+      if (el && el.offsetParent !== null) {
+        window.ReactNativeWebView.postMessage('booking-confirmed');
+        return;
+      }
+    }
+
+    // Check for confirmation/cancellation text in visible text nodes
+    var bodyText = (document.body.innerText || '').toLowerCase();
+
+    for (var j = 0; j < CONFIRMATION_TEXTS.length; j++) {
+      if (bodyText.indexOf(CONFIRMATION_TEXTS[j]) !== -1) {
+        window.ReactNativeWebView.postMessage('booking-confirmed');
+        return;
+      }
+    }
+
+    for (var k = 0; k < CANCELLATION_TEXTS.length; k++) {
+      if (bodyText.indexOf(CANCELLATION_TEXTS[k]) !== -1) {
+        window.ReactNativeWebView.postMessage('booking-cancelled');
+        return;
+      }
+    }
+  }
+
+  // Poll every second for up to 30 seconds after load
+  var attempts = 0;
+  var maxAttempts = 30;
+  var interval = setInterval(function() {
+    attempts++;
+    checkPage();
+    if (attempts >= maxAttempts) {
+      clearInterval(interval);
+    }
+  }, 1000);
+
+  // Also check on visibility change (user returns from payment page)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+      checkPage();
+    }
+  });
+})();
+true;
+`;
+
+/** Fallback URL patterns for navigation-based detection */
+const CONFIRMATION_URL_PATTERNS = [
   '/c/',
   'confirmation',
   'confirm',
@@ -24,8 +119,7 @@ const CONFIRMATION_PATTERNS = [
   'receipt',
 ];
 
-/** Patterns that indicate a cancelled booking on Bookwhen */
-const CANCELLATION_PATTERNS = [
+const CANCELLATION_URL_PATTERNS = [
   'cancelled',
   'cancel',
   'cancellation',
@@ -36,12 +130,12 @@ const CANCELLATION_PATTERNS = [
 
 function isConfirmationUrl(url: string): boolean {
   const lower = url.toLowerCase();
-  return CONFIRMATION_PATTERNS.some((pattern) => lower.includes(pattern));
+  return CONFIRMATION_URL_PATTERNS.some((pattern) => lower.includes(pattern));
 }
 
 function isCancellationUrl(url: string): boolean {
   const lower = url.toLowerCase();
-  return CANCELLATION_PATTERNS.some((pattern) => lower.includes(pattern));
+  return CANCELLATION_URL_PATTERNS.some((pattern) => lower.includes(pattern));
 }
 
 export default function BookingWebViewScreen() {
@@ -102,7 +196,20 @@ export default function BookingWebViewScreen() {
         tryMarkCancelled();
       }
     },
-    [tryMarkBooked],
+    [tryMarkBooked, tryMarkCancelled],
+  );
+
+  const handleMessage = useCallback(
+    (event: WebViewMessageEvent) => {
+      const data = event.nativeEvent.data;
+      console.log('[BookingWebView] Received message:', data);
+      if (data === 'booking-confirmed') {
+        tryMarkBooked();
+      } else if (data === 'booking-cancelled') {
+        tryMarkCancelled();
+      }
+    },
+    [tryMarkBooked, tryMarkCancelled],
   );
 
   const handleClose = useCallback(() => {
@@ -181,9 +288,12 @@ export default function BookingWebViewScreen() {
           onLoadStart={() => setLoading(true)}
           onLoadEnd={() => setLoading(false)}
           onNavigationStateChange={handleNavigationChange}
+          onMessage={handleMessage}
+          injectedJavaScript={INJECTED_OBSERVER}
           startInLoadingState
           sharedCookiesEnabled
           allowsBackForwardNavigationGestures
+          javaScriptEnabled
           style={styles.webview}
         />
         {loading && (
