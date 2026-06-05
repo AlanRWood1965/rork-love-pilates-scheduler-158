@@ -12,6 +12,7 @@ import { PilatesClass, ClassType, ClassLevel } from '@/types';
 import { fetchBookwhenEvents, getCachedEventsForInitialData } from '@/services/bookwhen';
 import { generateSchedule } from '@/mocks/classes';
 import { useFavourites, getFavouriteKey } from '@/providers/FavouritesProvider';
+import { useBookings } from '@/providers/BookingsProvider';
 import ClassCard from '@/components/ClassCard';
 import DateSelector from '@/components/DateSelector';
 import FilterChips from '@/components/FilterChips';
@@ -81,10 +82,12 @@ export default function ScheduleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { favouriteKeys, clearFavourites } = useFavourites();
+  const { isBooked } = useBookings();
 
   const [selectedDate, setSelectedDate] = useState<string>(getTodayStr());
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [showBookedOnly, setShowBookedOnly] = useState<string | null>(null);
 
   const dateItems = useMemo(() => buildDateItems(30), []);
 
@@ -114,8 +117,9 @@ export default function ScheduleScreen() {
       .filter((c) => c.date === selectedDate)
       .filter((c) => (selectedType ? c.classType === selectedType : true))
       .filter((c) => (selectedLevel ? c.level === selectedLevel : true))
+      .filter((c) => (showBookedOnly ? isBooked(c) : true))
       .sort((a, b) => a.time.localeCompare(b.time));
-  }, [schedule, selectedDate, selectedType, selectedLevel]);
+  }, [schedule, selectedDate, selectedType, selectedLevel, showBookedOnly, isBooked]);
 
   const favouriteItems = useMemo(() => {
     return favouriteKeys.map((key) => {
@@ -159,12 +163,13 @@ export default function ScheduleScreen() {
     clearFavourites();
   }, [clearFavourites]);
 
-  const hasActiveFilters = selectedType !== null || selectedLevel !== null;
+  const hasActiveFilters = selectedType !== null || selectedLevel !== null || showBookedOnly !== null;
 
   const handleClearFilters = useCallback(() => {
     void Haptics.selectionAsync();
     setSelectedType(null);
     setSelectedLevel(null);
+    setShowBookedOnly(null);
   }, []);
 
   const handleRefresh = useCallback(() => {
@@ -266,6 +271,14 @@ export default function ScheduleScreen() {
                 selected={selectedLevel}
                 onSelect={setSelectedLevel}
                 colorMap={levelColorMap}
+              />
+              <View style={{ height: 10 }} />
+              <FilterChips
+                label="Booking status"
+                options={['Booked']}
+                selected={showBookedOnly}
+                onSelect={setShowBookedOnly}
+                colorMap={{ Booked: Colors.primary }}
               />
             </View>
 
