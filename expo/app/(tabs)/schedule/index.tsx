@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,6 @@ import DateSelector from '@/components/DateSelector';
 import FilterChips from '@/components/FilterChips';
 
 const CLASS_TYPES: ClassType[] = ['Mat', 'Reformer', 'Tower', 'Wunda Chair'];
-const CLASS_TYPE_OPTIONS = ['Booked', ...CLASS_TYPES];
 const LEVELS: ClassLevel[] = ['Beginners', 'Transition', 'Intermediate', 'Advanced'];
 
 const classTypeColorMap: Record<string, string> = {
@@ -258,19 +257,52 @@ export default function ScheduleScreen() {
                   </Pressable>
                 )}
               </View>
-              <FilterChips
-                label="Class type"
-                options={CLASS_TYPE_OPTIONS}
-                selected={showBookedOnly ?? selectedType}
-                onSelect={(option) => {
-                  if (option === 'Booked') {
+              <Text style={styles.filterLabel}>Class type</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipsRow}
+                decelerationRate="fast"
+                snapToInterval={undefined}
+              >
+                {/* Booked chip — independently toggleable */}
+                <Pressable
+                  onPress={() => {
+                    void Haptics.selectionAsync();
                     setShowBookedOnly((prev) => prev ? null : 'Booked');
-                    return;
-                  }
-                  setSelectedType((prev) => prev === option ? null : option as string);
-                }}
-                colorMap={{ Booked: Colors.primary, ...classTypeColorMap }}
-              />
+                  }}
+                  style={[
+                    styles.chip,
+                    showBookedOnly && { backgroundColor: Colors.primary, borderColor: Colors.primary },
+                  ]}
+                >
+                  <Text style={[styles.chipText, showBookedOnly && styles.chipTextActive]}>
+                    Booked
+                  </Text>
+                </Pressable>
+                {/* Class type chips — mutually exclusive */}
+                {CLASS_TYPES.map((option) => {
+                  const isActive = selectedType === option;
+                  const chipColor = classTypeColorMap[option] ?? Colors.primary;
+                  return (
+                    <Pressable
+                      key={option}
+                      onPress={() => {
+                        void Haptics.selectionAsync();
+                        setSelectedType((prev) => prev === option ? null : option);
+                      }}
+                      style={[
+                        styles.chip,
+                        isActive && { backgroundColor: chipColor, borderColor: chipColor },
+                      ]}
+                    >
+                      <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                        {option}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
               <View style={{ height: 10 }} />
               <FilterChips
                 label="Level"
@@ -418,6 +450,35 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.6,
+  },
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: Colors.textMuted,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.8,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  chipsRow: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.textSecondary,
+  },
+  chipTextActive: {
+    color: Colors.textLight,
   },
   clearFiltersBtn: {
     flexDirection: 'row',
