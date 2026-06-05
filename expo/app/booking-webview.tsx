@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from '
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewNavigation, WebViewMessageEvent } from 'react-native-webview';
-import { X, ChevronLeft, ChevronRight, RotateCw, CheckCircle2, XCircle } from 'lucide-react-native';
+import { X, ChevronLeft, ChevronRight, RotateCw, CheckCircle2, XCircle, Calendar } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Colors from '@/constants/colors';
@@ -13,16 +13,148 @@ import { useBookings } from '@/providers/BookingsProvider';
  * Injected JavaScript that watches for booking confirmation or cancellation
  * on the Bookwhen page and posts a message back to React Native.
  *
- * Strategy:
- * 1. Poll the DOM for confirmation/cancellation text indicators
- * 2. Also watch for page visibility changes (user may return after payment)
- * 3. Post 'booking-confirmed' or 'booking-cancelled' when detected
+ * Strategy (multiple independent signals — any one is sufficient):
+ * 1. Green checkmark/tick SVGs — the most reliable visual indicator on Bookwhen
+ * 2. Green-styled elements with tick/check characters or icon classes
+ * 3. DOM text scanning for confirmation/cancellation phrases
+ * 4. CSS class/selector patterns for known confirmation elements
+ * 5. Visibility change watcher (user may return after external payment)
  */
 const INJECTED_OBSERVER = `
 (function() {
   if (window.__rorkBookingObserver) return;
   window.__rorkBookingObserver = true;
 
+  // ── Signal 1: Green checkmark SVG detection ──────────────────────────
+  // Common SVG checkmark path shapes (normalised for matching)
+  var CHECKMARK_PATH_SIGNATURES = [
+    'M9 16.2',      // Material Design check
+    'M9 16.17',     // Material Design variant
+    'M20 6L9 17',   // Feather icons
+    'M5 13l4 4',    // simple check
+    'M4 12l4 4',    // another variant
+    '16.17',        // MD check fragment
+    '21 7l-1.4',    // MD check lower segment
+  ];
+
+  function isCheckmarkPath(d) {
+    if (!d || d.length < 10) return false;
+    var n = d.replace(/\\s+/g, ' ').trim();
+    for (var i = 0; i < CHECKMARK_PATH_SIGNATURES.length; i++) {
+      if (n.indexOf(CHECKMARK_PATH_SIGNATURES[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  function isGreenishRgb(r, g, b) {
+    // Green channel must be significantly higher than red and blue
+    return g > 100 && g > r * 1.2 && g > b * 1.2;
+  }
+
+  function parseRgb(str) {
+    if (!str) return null;
+    var m = str.match(/rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)/);
+    if (m) return { r: parseInt(m[1],10), g: parseInt(m[2],10), b: parseInt(m[3],10) };
+    m = str.match(/rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);
+    if (m) return { r: parseInt(m[1],10), g: parseInt(m[2],10), b: parseInt(m[3],10) };
+    return null;
+  }
+
+  function elementIsGreen(el) {
+    if (!el) return false;
+    // Check SVG attributes first (fast path)
+    var fill = (el.getAttribute('fill') || '').toLowerCase();
+    var stroke = (el.getAttribute('stroke') || '').toLowerCase();
+    var greenHexes = /^#([234][0-9a-fA-F]){2}FF?$/;
+    if (greenHexes.test(fill) || greenHexes.test(stroke)) return true;
+
+    // Check computed style
+    try {
+      var cs = window.getComputedStyle(el);
+      var color = parseRgb(cs.color) || parseRgb(cs.fill);
+      if (color && isGreenishRgb(color.r, color.g, color.b)) return true;
+      var bg = parseRgb(cs.backgroundColor);
+      if (bg && isGreenishRgb(bg.r, bg.g, bg.b)) return true;
+    } catch(e) { /* cross-origin may block */ }
+    return false;
+  }
+
+  function hasGreenCheckmarkSvg() {
+    var svgs = document.querySelectorAll('svg');
+    for (var i = 0; i < svgs.length; i++) {
+      var svg = svgs[i];
+      if (!svg.offsetParent) continue; // invisible
+
+      var paths = svg.querySelectorAll('path');
+      for (var j = 0; j < paths.length; j++) {
+        var d = paths[j].getAttribute('d');
+        if (isCheckmarkPath(d) && elementIsGreen(paths[j])) {
+          return true;
+        }
+        // Also check if the path's parent svg/circle is green
+        if (isCheckmarkPath(d) && (elementIsGreen(svg) || elementIsGreen(paths[j].parentElement))) {
+          return true;
+        }
+      }
+
+      // Some checkmarks use <polyline> instead of <path>
+      var polylines = svg.querySelectorAll('polyline');
+      for (var k = 0; k < polylines.length; k++) {
+        var pts = polylines[k].getAttribute('points') || '';
+        // Checkmark polyline patterns: short stroke, few points
+        var pointCount = pts.split(/\\s+/).filter(Boolean).length;
+        if (pointCount >= 4 && pointCount <= 8 && elementIsGreen(polylines[k])) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // ── Signal 2: Green tick/check icon classes & Unicode chars ──────────
+  var CHECK_ICON_SELECTORS = [
+    '.fa-check', '.fa-check-circle', '.fa-circle-check',
+    '.fi-check', '.fi-check-circle',
+    '.icon-check', '.icon-tick', '.icon-confirmed',
+    '[class*="checkmark"]', '[class*="Checkmark"]',
+    '[class*="tick-icon"]', '[class*="TickIcon"]',
+    '[data-icon="check"]', '[data-icon="tick"]',
+    '[aria-label*="confirmed"]', '[aria-label*="booked"]',
+    'i[class*="check"]', 'span[class*="check"]',
+  ];
+
+  function hasGreenCheckIcon() {
+    for (var i = 0; i < CHECK_ICON_SELECTORS.length; i++) {
+      try {
+        var els = document.querySelectorAll(CHECK_ICON_SELECTORS[i]);
+        for (var j = 0; j < els.length; j++) {
+          if (els[j].offsetParent && elementIsGreen(els[j])) {
+            return true;
+          }
+        }
+      } catch(e) { /* invalid selector */ }
+    }
+    return false;
+  }
+
+  // Also check for Unicode check/tick characters rendered in green
+  function hasGreenTickChar() {
+    var TICK_CHARS = ['\\u2713', '\\u2714', '\\u2705', '\\u2611'];
+    var all = document.querySelectorAll('span, div, p, li, td, th, h1, h2, h3, h4, h5, h6');
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!el.offsetParent) continue;
+      var text = el.textContent || '';
+      for (var j = 0; j < TICK_CHARS.length; j++) {
+        if (text.indexOf(TICK_CHARS[j]) !== -1 && elementIsGreen(el)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // ── Signal 3: Text-based detection (fallback) ────────────────────────
   var CONFIRMATION_SELECTORS = [
     '[data-testid="confirmation"]',
     '.confirmation-page',
@@ -39,7 +171,7 @@ const INJECTED_OBSERVER = `
     'thank you for your booking',
     'your booking has been confirmed',
     'you are booked',
-    'you\u2019re booked',
+    'you\\u2019re booked',
     "you're booked",
     'order confirmed',
     'order complete',
@@ -55,31 +187,60 @@ const INJECTED_OBSERVER = `
     'refund processed',
   ];
 
-  function checkPage() {
+  function hasConfirmationText() {
     // Check for known confirmation selectors
     for (var i = 0; i < CONFIRMATION_SELECTORS.length; i++) {
       var el = document.querySelector(CONFIRMATION_SELECTORS[i]);
-      if (el && el.offsetParent !== null) {
-        window.ReactNativeWebView.postMessage('booking-confirmed');
-        return;
-      }
+      if (el && el.offsetParent !== null) return true;
     }
-
-    // Check for confirmation/cancellation text in visible text nodes
+    // Check body text
     var bodyText = (document.body.innerText || '').toLowerCase();
-
     for (var j = 0; j < CONFIRMATION_TEXTS.length; j++) {
-      if (bodyText.indexOf(CONFIRMATION_TEXTS[j]) !== -1) {
-        window.ReactNativeWebView.postMessage('booking-confirmed');
-        return;
-      }
+      if (bodyText.indexOf(CONFIRMATION_TEXTS[j]) !== -1) return true;
+    }
+    return false;
+  }
+
+  function hasCancellationText() {
+    var bodyText = (document.body.innerText || '').toLowerCase();
+    for (var k = 0; k < CANCELLATION_TEXTS.length; k++) {
+      if (bodyText.indexOf(CANCELLATION_TEXTS[k]) !== -1) return true;
+    }
+    return false;
+  }
+
+  // ── Orchestration ────────────────────────────────────────────────────
+  var alreadyFired = false;
+
+  function checkPage() {
+    if (alreadyFired) return;
+
+    // Signal 1: Green checkmark SVG (most reliable)
+    if (hasGreenCheckmarkSvg()) {
+      alreadyFired = true;
+      window.ReactNativeWebView.postMessage('booking-confirmed');
+      return;
     }
 
-    for (var k = 0; k < CANCELLATION_TEXTS.length; k++) {
-      if (bodyText.indexOf(CANCELLATION_TEXTS[k]) !== -1) {
-        window.ReactNativeWebView.postMessage('booking-cancelled');
-        return;
-      }
+    // Signal 2: Green check icon or tick character
+    if (hasGreenCheckIcon() || hasGreenTickChar()) {
+      alreadyFired = true;
+      window.ReactNativeWebView.postMessage('booking-confirmed');
+      return;
+    }
+
+    // Signal 3: Text-based confirmation (fallback)
+    if (hasConfirmationText()) {
+      alreadyFired = true;
+      window.ReactNativeWebView.postMessage('booking-confirmed');
+      return;
+    }
+
+    // Cancellation (only via text)
+    if (hasCancellationText()) {
+      alreadyFired = true;
+      window.ReactNativeWebView.postMessage('booking-cancelled');
+      return;
     }
   }
 
@@ -97,9 +258,13 @@ const INJECTED_OBSERVER = `
   // Also check on visibility change (user returns from payment page)
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible') {
+      attempts = 0; // reset counter to keep polling after returning
       checkPage();
     }
   });
+
+  // Run immediately too (page may already be loaded)
+  checkPage();
 })();
 true;
 `;
@@ -171,7 +336,7 @@ export default function BookingWebViewScreen() {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     markAsBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
     setBookingConfirmed(true);
-    console.log('[BookingWebView] Booking confirmed via URL detection');
+    console.log('[BookingWebView] Booking confirmed (green tick / text / URL)');
   }, [bookwhenEventId, classId, markAsBooked]);
 
   const tryMarkCancelled = useCallback(() => {
@@ -227,6 +392,15 @@ export default function BookingWebViewScreen() {
 
   const handleReload = useCallback(() => {
     webRef.current?.reload();
+  }, []);
+
+  /** Navigate to the Bookwhen schedule page — green ticks on booked classes can be detected there */
+  const handleViewSchedule = useCallback(() => {
+    webRef.current?.injectJavaScript(`
+      window.location.href = 'https://bookwhen.com/karenwoodpilates';
+      true;
+    `);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, []);
 
   if (Platform.OS === 'web') {
@@ -330,6 +504,16 @@ export default function BookingWebViewScreen() {
           <ChevronRight size={22} color={canGoForward ? Colors.text : Colors.textMuted} />
         </Pressable>
         <View style={{ flex: 1 }} />
+        {!bookingConfirmed && (
+          <Pressable
+            onPress={handleViewSchedule}
+            style={({ pressed }) => [styles.scheduleBtn, pressed && styles.navBtnPressed]}
+            testID="booking-schedule"
+          >
+            <Calendar size={16} color={Colors.primary} />
+            <Text style={styles.scheduleBtnText}>Schedule</Text>
+          </Pressable>
+        )}
         <Pressable
           onPress={handleReload}
           style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
@@ -438,5 +622,20 @@ const styles = StyleSheet.create({
   },
   navBtnPressed: {
     opacity: 0.7,
+  },
+  scheduleBtn: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: Colors.primary + '18',
+    marginRight: 8,
+  },
+  scheduleBtnText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.primary,
   },
 });
