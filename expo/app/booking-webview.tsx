@@ -40,7 +40,7 @@ const INJECTED_OBSERVER = `
     'your booking has been confirmed',
     'you are booked',
     'you\u2019re booked',
-    'you're booked',
+    "you're booked",
     'order confirmed',
     'order complete',
     'booking successful',
@@ -289,6 +289,7 @@ export default function BookingWebViewScreen() {
           onLoadEnd={() => setLoading(false)}
           onNavigationStateChange={handleNavigationChange}
           onMessage={handleMessage}
+          injectedJavaScriptBeforeContentLoaded={INJECTED_OBSERVER}
           injectedJavaScript={INJECTED_OBSERVER}
           startInLoadingState
           sharedCookiesEnabled
