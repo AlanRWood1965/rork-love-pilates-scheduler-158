@@ -108,7 +108,7 @@ function ClassCard({ item, onPress }: ClassCardProps) {
                   delayLongPress={500}
                   style={({ pressed }) => [styles.bookedBadge, pressed && { opacity: 0.7 }]}
                 >
-                  <CheckCircle2 size={12} color={Colors.primary} />
+                  <CheckCircle2 size={12} color={Colors.success} />
                   <Text style={styles.bookedBadgeText}>Booked</Text>
                 </Pressable>
               ) : (
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 4,
-    backgroundColor: Colors.primary + '14',
+    backgroundColor: Colors.success + '18',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   bookedBadgeText: {
     fontSize: 11,
     fontWeight: '700' as const,
-    color: Colors.primary,
+    color: Colors.success,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },

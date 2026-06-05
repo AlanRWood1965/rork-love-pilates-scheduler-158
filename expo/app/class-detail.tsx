@@ -222,9 +222,9 @@ export default function ClassDetailScreen() {
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
         {booked && (
-          <View style={[styles.bookedInfoBar, { backgroundColor: color + '12' }]}>
-            <CheckCircle2 size={16} color={color} />
-            <Text style={[styles.bookedInfoBarText, { color }]}>
+          <View style={styles.bookedInfoBar}>
+            <CheckCircle2 size={16} color={Colors.success} />
+            <Text style={styles.bookedInfoBarText}>
               You booked this class
             </Text>
           </View>
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginHorizontal: 20,
     marginTop: 16,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.success,
     borderRadius: 14,
     padding: 16,
   },
@@ -435,9 +435,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     marginBottom: 10,
+    backgroundColor: Colors.success + '14',
   },
   bookedInfoBarText: {
     fontSize: 13,
     fontWeight: '700' as const,
+    color: Colors.success,
   },
 });

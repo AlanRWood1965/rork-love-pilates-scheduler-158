@@ -12,6 +12,7 @@ const Colors = {
   border: '#E8E2DE',
   borderLight: '#F0EBE8',
   shadow: 'rgba(45,42,40,0.06)',
+  success: '#22A94B',
   error: '#D94B4B',
   mat: '#D4546A',
   reformer: '#C44D2B',

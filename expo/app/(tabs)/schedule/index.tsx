@@ -275,7 +275,7 @@ export default function ScheduleScreen() {
                   }}
                   style={[
                     styles.chip,
-                    showBookedOnly && { backgroundColor: Colors.primary, borderColor: Colors.primary },
+                    showBookedOnly && { backgroundColor: Colors.success, borderColor: Colors.success },
                   ]}
                 >
                   <Text style={[styles.chipText, showBookedOnly && styles.chipTextActive]}>
