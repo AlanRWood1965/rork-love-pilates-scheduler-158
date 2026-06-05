@@ -327,10 +327,12 @@ export default function BookingWebViewScreen() {
 
   const { markAsBooked, markAsUnbooked, getBookingManageUrl, updateBookingManageUrl } = useBookings();
 
-  // If this class is already booked and we have a stored manage URL, use it
-  // so the user lands on the manage/delete booking page from the email
+  // Only use the stored manage URL if it's actually a manage-booking page
+  // (Bookwhen manage pages live at /c/{reference} — the event page has no cancel button).
+  // Otherwise fall back to the provided URL (e.g. the schedule page).
   const storedManageUrl = getBookingManageUrl({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
-  const url = storedManageUrl ?? rawUrl;
+  const isValidManageUrl = storedManageUrl?.includes('/c/');
+  const url = isValidManageUrl ? storedManageUrl! : rawUrl;
   const markedRef = useRef(false);
   const cancelledRef = useRef(false);
   /** Tracks the current URL in the WebView so we can capture it on confirmation */

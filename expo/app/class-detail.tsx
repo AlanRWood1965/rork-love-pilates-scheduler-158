@@ -77,16 +77,21 @@ export default function ClassDetailScreen() {
 
   const handleBookNow = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // When already booked, open the main schedule page so the user can see
+    // green ticks and manage/cancel their bookings. The event-specific page
+    // does not have a cancel button — only the schedule and /c/{ref} pages do.
     let url: string;
-    if (bookingUrl) {
+    if (booked) {
+      url = 'https://bookwhen.com/karenwoodpilates';
+    } else if (bookingUrl) {
       url = bookingUrl;
     } else if (bookwhenEventId) {
       url = `https://bookwhen.com/karenwoodpilates/e/${bookwhenEventId}`;
     } else {
-      url = `https://bookwhen.com/karenwoodpilates`;
+      url = 'https://bookwhen.com/karenwoodpilates';
     }
     console.log('[ClassDetail] Opening booking URL in WebView:', url);
-    const title = isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
+    const title = booked ? 'Manage Booking' : isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
     router.push({
       pathname: '/booking-webview',
       params: {
@@ -96,7 +101,7 @@ export default function ClassDetailScreen() {
         classId,
       },
     });
-  }, [bookingUrl, bookwhenEventId, router, isFull, classType, classId]);
+  }, [bookingUrl, bookwhenEventId, router, isFull, classType, classId, booked]);
 
   const handleClose = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
