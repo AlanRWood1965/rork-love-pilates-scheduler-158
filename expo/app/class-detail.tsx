@@ -10,12 +10,14 @@ import {
   Calendar,
   ExternalLink,
   Info,
+  CheckCircle2,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Colors from '@/constants/colors';
 import { ClassType } from '@/types';
 import { classTypeInfos } from '@/mocks/classes';
+import { useBookings } from '@/providers/BookingsProvider';
 
 const typeColors: Record<ClassType, string> = {
   Mat: Colors.mat,
@@ -58,15 +60,19 @@ export default function ClassDetailScreen() {
   const isFull = spotsLeft === 0;
   const classInfo = classTypeInfos.find((c) => c.type === classType);
 
+  const classId = params.id ?? '';
+  const bookwhenEventId = params.bookwhenEventId ?? '';
+  const bookingUrl = params.bookingUrl ?? '';
+
+  const { isBooked, markAsBooked } = useBookings();
+  const booked = isBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
+
   const dateStr = params.date ?? '';
   const dateParts = dateStr.split('-');
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const displayDate = dateParts.length === 3
     ? `${params.dayOfWeek ?? ''}, ${parseInt(dateParts[2], 10)} ${monthNames[parseInt(dateParts[1], 10) - 1]}`
     : dateStr;
-
-  const bookingUrl = params.bookingUrl ?? '';
-  const bookwhenEventId = params.bookwhenEventId ?? '';
 
   const handleBookNow = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -79,12 +85,13 @@ export default function ClassDetailScreen() {
       url = `https://bookwhen.com/karenwoodpilates`;
     }
     console.log('[ClassDetail] Opening booking URL in WebView:', url);
+    markAsBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
     const title = isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
     router.push({
       pathname: '/booking-webview',
       params: { url, title },
     });
-  }, [bookingUrl, bookwhenEventId, router, isFull, classType]);
+  }, [bookingUrl, bookwhenEventId, router, isFull, classType, markAsBooked, classId]);
 
   const handleClose = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -113,6 +120,18 @@ export default function ClassDetailScreen() {
         contentContainerStyle={[styles.scrollInner, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
       >
+        {booked && (
+          <View style={styles.bookedBanner}>
+            <CheckCircle2 size={18} color={Colors.textLight} />
+            <View style={styles.bookedBannerTextWrap}>
+              <Text style={styles.bookedBannerTitle}>You've already booked this class</Text>
+              <Text style={styles.bookedBannerSubtitle}>
+                You can still join the waiting list or re-visit your booking page to manage your spot.
+              </Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.detailsGrid}>
           <View style={styles.detailItem}>
             <Calendar size={18} color={color} />
@@ -178,18 +197,28 @@ export default function ClassDetailScreen() {
       </ScrollView>
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
+        {booked && (
+          <View style={[styles.bookedInfoBar, { backgroundColor: color + '12' }]}>
+            <CheckCircle2 size={16} color={color} />
+            <Text style={[styles.bookedInfoBarText, { color }]}>
+              You booked this class
+            </Text>
+          </View>
+        )}
         <Pressable
           onPress={handleBookNow}
           style={({ pressed }) => [
             styles.bookButton,
-            { backgroundColor: color },
+            booked
+              ? { backgroundColor: Colors.surfaceAlt, borderWidth: 2, borderColor: color }
+              : { backgroundColor: color },
             pressed && styles.bookButtonPressed,
           ]}
         >
-          <Text style={styles.bookButtonText}>
-            {isFull ? 'Join the Waiting List' : 'Book Now'}
+          <Text style={[styles.bookButtonText, booked && { color }]}>
+            {isFull ? 'Join the Waiting List' : booked ? 'View Your Booking' : 'Book Now'}
           </Text>
-          <ExternalLink size={16} color={Colors.textLight} />
+          <ExternalLink size={16} color={booked ? color : Colors.textLight} />
         </Pressable>
       </View>
     </View>
@@ -349,5 +378,42 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700' as const,
     color: Colors.textLight,
+  },
+  bookedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: Colors.primary,
+    borderRadius: 14,
+    padding: 16,
+  },
+  bookedBannerTextWrap: {
+    flex: 1,
+  },
+  bookedBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: Colors.textLight,
+    marginBottom: 4,
+  },
+  bookedBannerSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 17,
+  },
+  bookedInfoBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  bookedInfoBarText: {
+    fontSize: 13,
+    fontWeight: '700' as const,
   },
 });

@@ -6,6 +6,7 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { FavouritesProvider } from "@/providers/FavouritesProvider";
+import { BookingsProvider } from "@/providers/BookingsProvider";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 void SplashScreen.preventAutoHideAsync();
@@ -40,9 +41,11 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <FavouritesProvider>
-        <GestureHandlerRootView>
-          <RootLayoutNav />
-        </GestureHandlerRootView>
+        <BookingsProvider>
+          <GestureHandlerRootView>
+            <RootLayoutNav />
+          </GestureHandlerRootView>
+        </BookingsProvider>
       </FavouritesProvider>
     </QueryClientProvider>
   );

@@ -1,11 +1,12 @@
 import React, { useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
-import { Clock, Users, XCircle, Heart } from 'lucide-react-native';
+import { Clock, Users, XCircle, Heart, CheckCircle2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Colors from '@/constants/colors';
 import { PilatesClass, ClassType } from '@/types';
 import { useFavourites } from '@/providers/FavouritesProvider';
+import { useBookings } from '@/providers/BookingsProvider';
 
 const classTypeColors: Record<ClassType, string> = {
   Mat: Colors.mat,
@@ -29,7 +30,9 @@ interface ClassCardProps {
 function ClassCard({ item, onPress }: ClassCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const { isFavourite, toggleFavourite } = useFavourites();
+  const { isBooked } = useBookings();
   const favourite = isFavourite(item);
+  const booked = isBooked(item);
 
   const handleFavouritePress = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -82,6 +85,11 @@ function ClassCard({ item, onPress }: ClassCardProps) {
                 <View style={styles.cancelledBadge}>
                   <XCircle size={12} color="#FFFFFF" />
                   <Text style={styles.cancelledBadgeText}>Cancelled</Text>
+                </View>
+              ) : booked ? (
+                <View style={styles.bookedBadge}>
+                  <CheckCircle2 size={12} color={Colors.primary} />
+                  <Text style={styles.bookedBadgeText}>Booked</Text>
                 </View>
               ) : (
                 <View style={[styles.levelBadge, { backgroundColor: lvlColor + '18' }]}>
@@ -241,6 +249,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700' as const,
     color: '#FFFFFF',
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  bookedBadge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    backgroundColor: Colors.primary + '14',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  bookedBadgeText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: Colors.primary,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
