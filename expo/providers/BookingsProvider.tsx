@@ -10,6 +10,7 @@ const STORAGE_KEY = 'love-pilates:bookings:v1';
 type BookingRecord = {
   id: string;
   bookedAt: string;
+  manageUrl?: string;
 };
 
 async function loadBookings(): Promise<BookingRecord[]> {
@@ -80,13 +81,22 @@ export const [BookingsProvider, useBookings] = createContextHook(() => {
   );
 
   const markAsBooked = useCallback(
-    (item: Pick<PilatesClass, 'bookwhenEventId' | 'id'>) => {
+    (item: Pick<PilatesClass, 'bookwhenEventId' | 'id'>, manageUrl?: string) => {
       const key = getBookingKey(item);
       const current =
         (queryClient.getQueryData<BookingRecord[]>(['bookings']) ?? []);
-      if (current.some((r) => r.id === key)) return;
-      const next = [...current, { id: key, bookedAt: new Date().toISOString() }];
-      console.log('[Bookings] Marked as booked:', key);
+      const existing = current.find((r) => r.id === key);
+      // If already booked and we have a manageUrl that wasn't previously stored, update the record
+      if (existing) {
+        if (manageUrl && !existing.manageUrl) {
+          const next = current.map((r) => r.id === key ? { ...r, manageUrl } : r);
+          console.log('[Bookings] Updated manageUrl for:', key, manageUrl.slice(0, 60));
+          setBookings(next);
+        }
+        return;
+      }
+      const next = [...current, { id: key, bookedAt: new Date().toISOString(), manageUrl }];
+      console.log('[Bookings] Marked as booked:', key, manageUrl?.slice(0, 60) ?? 'no manageUrl');
       setBookings(next);
     },
     [queryClient, setBookings]
@@ -112,6 +122,15 @@ export const [BookingsProvider, useBookings] = createContextHook(() => {
     [bookedIds]
   );
 
+  const getBookingManageUrl = useCallback(
+    (item: Pick<PilatesClass, 'bookwhenEventId' | 'id'>) => {
+      const key = getBookingKey(item);
+      const record = bookingRecords.find((r) => r.id === key);
+      return record?.manageUrl ?? null;
+    },
+    [bookingRecords]
+  );
+
   return useMemo(
     () => ({
       bookedIds,
@@ -119,8 +138,9 @@ export const [BookingsProvider, useBookings] = createContextHook(() => {
       markAsBooked,
       markAsUnbooked,
       bookingRecords,
+      getBookingManageUrl,
       isLoading: bookingsQuery.isLoading,
     }),
-    [bookedIds, isBooked, markAsBooked, markAsUnbooked, bookingRecords, bookingsQuery.isLoading]
+    [bookedIds, isBooked, markAsBooked, markAsUnbooked, bookingRecords, getBookingManageUrl, bookingsQuery.isLoading]
   );
 });

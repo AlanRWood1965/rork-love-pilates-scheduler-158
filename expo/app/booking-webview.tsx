@@ -320,23 +320,33 @@ export default function BookingWebViewScreen() {
   const [bookingConfirmed, setBookingConfirmed] = useState<boolean>(false);
   const [bookingCancelled, setBookingCancelled] = useState<boolean>(false);
 
-  const url = params.url ?? 'https://bookwhen.com/karenwoodpilates';
+  const rawUrl = params.url ?? 'https://bookwhen.com/karenwoodpilates';
   const title = params.title ?? 'Book Class';
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const classId = params.classId ?? '';
 
-  const { markAsBooked, markAsUnbooked } = useBookings();
+  // If this class is already booked and we have a stored manage URL, use it
+  // so the user lands on the manage/delete booking page from the email
+  const storedManageUrl = getBookingManageUrl({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
+  const url = storedManageUrl ?? rawUrl;
+
+  const { markAsBooked, markAsUnbooked, getBookingManageUrl } = useBookings();
   const markedRef = useRef(false);
   const cancelledRef = useRef(false);
+  /** Tracks the current URL in the WebView so we can capture it on confirmation */
+  const currentUrlRef = useRef<string>(url);
 
   const tryMarkBooked = useCallback(() => {
     if (markedRef.current) return;
     if (!bookwhenEventId && !classId) return;
     markedRef.current = true;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    markAsBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
+    // Capture the current URL as the manage-booking URL (Bookwhen redirects
+    // to the unique manage/confirmation page after a successful booking)
+    const manageUrl = currentUrlRef.current;
+    console.log('[BookingWebView] Booking confirmed, manageUrl:', manageUrl?.slice(0, 80));
+    markAsBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId }, manageUrl);
     setBookingConfirmed(true);
-    console.log('[BookingWebView] Booking confirmed (green tick / text / URL)');
   }, [bookwhenEventId, classId, markAsBooked]);
 
   const tryMarkCancelled = useCallback(() => {
@@ -352,6 +362,7 @@ export default function BookingWebViewScreen() {
 
   const handleNavigationChange = useCallback(
     (nav: WebViewNavigation) => {
+      currentUrlRef.current = nav.url;
       setCanGoBack(nav.canGoBack);
       setCanGoForward(nav.canGoForward);
       if (isConfirmationUrl(nav.url)) {
