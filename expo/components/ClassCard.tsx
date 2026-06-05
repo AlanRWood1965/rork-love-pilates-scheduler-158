@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, Alert } from 'react-native';
 import { Clock, Users, XCircle, Heart, CheckCircle2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
@@ -30,7 +30,7 @@ interface ClassCardProps {
 function ClassCard({ item, onPress }: ClassCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const { isFavourite, toggleFavourite } = useFavourites();
-  const { isBooked } = useBookings();
+  const { isBooked, markAsUnbooked } = useBookings();
   const favourite = isFavourite(item);
   const booked = isBooked(item);
 
@@ -58,6 +58,22 @@ function ClassCard({ item, onPress }: ClassCardProps) {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress(item);
   }, [item, onPress]);
+
+  const handleUnbook = useCallback(() => {
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      'Remove booking',
+      'Did you cancel this class on Bookwhen? This will remove it from your booked list in the app.',
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => markAsUnbooked(item),
+        },
+      ],
+    );
+  }, [item, markAsUnbooked]);
 
   const typeColor = classTypeColors[item.classType];
   const lvlColor = levelColors[item.level] ?? Colors.textMuted;
@@ -87,10 +103,14 @@ function ClassCard({ item, onPress }: ClassCardProps) {
                   <Text style={styles.cancelledBadgeText}>Cancelled</Text>
                 </View>
               ) : booked ? (
-                <View style={styles.bookedBadge}>
+                <Pressable
+                  onLongPress={handleUnbook}
+                  delayLongPress={500}
+                  style={({ pressed }) => [styles.bookedBadge, pressed && { opacity: 0.7 }]}
+                >
                   <CheckCircle2 size={12} color={Colors.primary} />
                   <Text style={styles.bookedBadgeText}>Booked</Text>
-                </View>
+                </Pressable>
               ) : (
                 <View style={[styles.levelBadge, { backgroundColor: lvlColor + '18' }]}>
                   <Text style={[styles.levelText, { color: lvlColor }]}>{item.level}</Text>

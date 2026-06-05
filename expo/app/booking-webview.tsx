@@ -1,15 +1,41 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView } from 'react-native-webview';
-import { X, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react-native';
+import { WebView, WebViewNavigation } from 'react-native-webview';
+import { X, ChevronLeft, ChevronRight, RotateCw, CheckCircle2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Colors from '@/constants/colors';
+import { useBookings } from '@/providers/BookingsProvider';
+
+/** Patterns that indicate a successful booking on Bookwhen */
+const CONFIRMATION_PATTERNS = [
+  '/c/',
+  'confirmation',
+  'confirm',
+  'thank-you',
+  'thankyou',
+  'thanks',
+  'success',
+  'booked',
+  'booking-complete',
+  'order-complete',
+  'receipt',
+];
+
+function isConfirmationUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  return CONFIRMATION_PATTERNS.some((pattern) => lower.includes(pattern));
+}
 
 export default function BookingWebViewScreen() {
-  const params = useLocalSearchParams<{ url?: string; title?: string }>();
+  const params = useLocalSearchParams<{
+    url?: string;
+    title?: string;
+    bookwhenEventId?: string;
+    classId?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const webRef = useRef<WebView>(null);
@@ -17,9 +43,36 @@ export default function BookingWebViewScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [canGoBack, setCanGoBack] = useState<boolean>(false);
   const [canGoForward, setCanGoForward] = useState<boolean>(false);
+  const [bookingConfirmed, setBookingConfirmed] = useState<boolean>(false);
 
   const url = params.url ?? 'https://bookwhen.com/karenwoodpilates';
   const title = params.title ?? 'Book Class';
+  const bookwhenEventId = params.bookwhenEventId ?? '';
+  const classId = params.classId ?? '';
+
+  const { markAsBooked } = useBookings();
+  const markedRef = useRef(false);
+
+  const tryMarkBooked = useCallback(() => {
+    if (markedRef.current) return;
+    if (!bookwhenEventId && !classId) return;
+    markedRef.current = true;
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    markAsBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
+    setBookingConfirmed(true);
+    console.log('[BookingWebView] Booking confirmed via URL detection');
+  }, [bookwhenEventId, classId, markAsBooked]);
+
+  const handleNavigationChange = useCallback(
+    (nav: WebViewNavigation) => {
+      setCanGoBack(nav.canGoBack);
+      setCanGoForward(nav.canGoForward);
+      if (!markedRef.current && isConfirmationUrl(nav.url)) {
+        tryMarkBooked();
+      }
+    },
+    [tryMarkBooked],
+  );
 
   const handleClose = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -77,16 +130,20 @@ export default function BookingWebViewScreen() {
         </Pressable>
       </View>
 
+      {bookingConfirmed && (
+        <View style={styles.confirmedBanner}>
+          <CheckCircle2 size={18} color={Colors.textLight} />
+          <Text style={styles.confirmedText}>Booking confirmed!</Text>
+        </View>
+      )}
+
       <View style={styles.webviewWrap}>
         <WebView
           ref={webRef}
           source={{ uri: url }}
           onLoadStart={() => setLoading(true)}
           onLoadEnd={() => setLoading(false)}
-          onNavigationStateChange={(nav) => {
-            setCanGoBack(nav.canGoBack);
-            setCanGoForward(nav.canGoForward);
-          }}
+          onNavigationStateChange={handleNavigationChange}
           startInLoadingState
           sharedCookiesEnabled
           allowsBackForwardNavigationGestures
@@ -170,6 +227,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: Colors.primary,
+  },
+  confirmedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#2E7D32',
+    paddingVertical: 10,
+  },
+  confirmedText: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: Colors.textLight,
   },
   webviewWrap: {
     flex: 1,

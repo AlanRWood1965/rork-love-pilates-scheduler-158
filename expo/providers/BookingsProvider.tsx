@@ -92,6 +92,19 @@ export const [BookingsProvider, useBookings] = createContextHook(() => {
     [queryClient, setBookings]
   );
 
+  const markAsUnbooked = useCallback(
+    (item: Pick<PilatesClass, 'bookwhenEventId' | 'id'>) => {
+      const key = getBookingKey(item);
+      const current =
+        (queryClient.getQueryData<BookingRecord[]>(['bookings']) ?? []);
+      const next = current.filter((r) => r.id !== key);
+      if (next.length === current.length) return;
+      console.log('[Bookings] Marked as unbooked:', key);
+      setBookings(next);
+    },
+    [queryClient, setBookings]
+  );
+
   const isBooked = useCallback(
     (item: Pick<PilatesClass, 'bookwhenEventId' | 'id'>) => {
       return bookedIds.has(getBookingKey(item));
@@ -104,9 +117,10 @@ export const [BookingsProvider, useBookings] = createContextHook(() => {
       bookedIds,
       isBooked,
       markAsBooked,
+      markAsUnbooked,
       bookingRecords,
       isLoading: bookingsQuery.isLoading,
     }),
-    [bookedIds, isBooked, markAsBooked, bookingRecords, bookingsQuery.isLoading]
+    [bookedIds, isBooked, markAsBooked, markAsUnbooked, bookingRecords, bookingsQuery.isLoading]
   );
 });

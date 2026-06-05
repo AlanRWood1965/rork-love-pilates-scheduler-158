@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -64,7 +64,7 @@ export default function ClassDetailScreen() {
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const bookingUrl = params.bookingUrl ?? '';
 
-  const { isBooked, markAsBooked } = useBookings();
+  const { isBooked, markAsUnbooked } = useBookings();
   const booked = isBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
 
   const dateStr = params.date ?? '';
@@ -85,18 +85,38 @@ export default function ClassDetailScreen() {
       url = `https://bookwhen.com/karenwoodpilates`;
     }
     console.log('[ClassDetail] Opening booking URL in WebView:', url);
-    markAsBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
     const title = isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
     router.push({
       pathname: '/booking-webview',
-      params: { url, title },
+      params: {
+        url,
+        title,
+        bookwhenEventId: bookwhenEventId || '',
+        classId,
+      },
     });
-  }, [bookingUrl, bookwhenEventId, router, isFull, classType, markAsBooked, classId]);
+  }, [bookingUrl, bookwhenEventId, router, isFull, classType, classId]);
 
   const handleClose = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   }, [router]);
+
+  const handleUnbook = useCallback(() => {
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert(
+      'Remove booking',
+      'Did you cancel this class on Bookwhen? This will remove it from your booked list in the app.',
+      [
+        { text: 'Keep', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => markAsUnbooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId }),
+        },
+      ],
+    );
+  }, [bookwhenEventId, classId, markAsUnbooked]);
 
   return (
     <View style={styles.container}>
@@ -121,15 +141,19 @@ export default function ClassDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {booked && (
-          <View style={styles.bookedBanner}>
+          <Pressable
+            onLongPress={handleUnbook}
+            delayLongPress={600}
+            style={({ pressed }) => [styles.bookedBanner, pressed && { opacity: 0.8 }]}
+          >
             <CheckCircle2 size={18} color={Colors.textLight} />
             <View style={styles.bookedBannerTextWrap}>
               <Text style={styles.bookedBannerTitle}>You've already booked this class</Text>
               <Text style={styles.bookedBannerSubtitle}>
-                You can still join the waiting list or re-visit your booking page to manage your spot.
+                Long-press to remove. You can still join the waiting list or re-visit your booking page.
               </Text>
             </View>
-          </View>
+          </Pressable>
         )}
 
         <View style={styles.detailsGrid}>
