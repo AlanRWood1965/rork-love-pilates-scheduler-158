@@ -7,7 +7,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { FavouritesProvider } from "@/providers/FavouritesProvider";
 import { BookingsProvider } from "@/providers/BookingsProvider";
-import BookingSync from "@/components/BookingSync";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 void SplashScreen.preventAutoHideAsync();
@@ -43,7 +42,6 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <FavouritesProvider>
         <BookingsProvider>
-          <BookingSync />
           <GestureHandlerRootView>
             <RootLayoutNav />
           </GestureHandlerRootView>
