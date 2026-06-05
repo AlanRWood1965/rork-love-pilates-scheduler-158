@@ -18,6 +18,7 @@ import DateSelector from '@/components/DateSelector';
 import FilterChips from '@/components/FilterChips';
 
 const CLASS_TYPES: ClassType[] = ['Mat', 'Reformer', 'Tower', 'Wunda Chair'];
+const CLASS_TYPE_OPTIONS = ['Booked', ...CLASS_TYPES];
 const LEVELS: ClassLevel[] = ['Beginners', 'Transition', 'Intermediate', 'Advanced'];
 
 const classTypeColorMap: Record<string, string> = {
@@ -259,10 +260,16 @@ export default function ScheduleScreen() {
               </View>
               <FilterChips
                 label="Class type"
-                options={CLASS_TYPES}
-                selected={selectedType}
-                onSelect={setSelectedType}
-                colorMap={classTypeColorMap}
+                options={CLASS_TYPE_OPTIONS}
+                selected={showBookedOnly ?? selectedType}
+                onSelect={(option) => {
+                  if (option === 'Booked') {
+                    setShowBookedOnly((prev) => prev ? null : 'Booked');
+                    return;
+                  }
+                  setSelectedType((prev) => prev === option ? null : option as string);
+                }}
+                colorMap={{ Booked: Colors.primary, ...classTypeColorMap }}
               />
               <View style={{ height: 10 }} />
               <FilterChips
@@ -271,14 +278,6 @@ export default function ScheduleScreen() {
                 selected={selectedLevel}
                 onSelect={setSelectedLevel}
                 colorMap={levelColorMap}
-              />
-              <View style={{ height: 10 }} />
-              <FilterChips
-                label="Booking status"
-                options={['Booked']}
-                selected={showBookedOnly}
-                onSelect={setShowBookedOnly}
-                colorMap={{ Booked: Colors.primary }}
               />
             </View>
 
