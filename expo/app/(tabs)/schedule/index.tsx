@@ -114,11 +114,17 @@ export default function ScheduleScreen() {
 
   const classesForDay = useMemo(() => {
     return schedule
-      .filter((c) => c.date === selectedDate)
+      .filter((c) => (showBookedOnly ? true : c.date === selectedDate))
       .filter((c) => (selectedType ? c.classType === selectedType : true))
       .filter((c) => (selectedLevel ? c.level === selectedLevel : true))
       .filter((c) => (showBookedOnly ? isBooked(c) : true))
-      .sort((a, b) => a.time.localeCompare(b.time));
+      .sort((a, b) => {
+        if (showBookedOnly) {
+          const dateComp = a.date.localeCompare(b.date);
+          if (dateComp !== 0) return dateComp;
+        }
+        return a.time.localeCompare(b.time);
+      });
   }, [schedule, selectedDate, selectedType, selectedLevel, showBookedOnly, isBooked]);
 
   const favouriteItems = useMemo(() => {
@@ -322,7 +328,9 @@ export default function ScheduleScreen() {
             </View>
 
             <View style={styles.dayHeader}>
-              <Text style={styles.dayHeaderText}>{formatHeading(selectedDate)}</Text>
+              <Text style={styles.dayHeaderText}>
+                {showBookedOnly ? 'Your Booked Classes' : formatHeading(selectedDate)}
+              </Text>
               <Text style={styles.dayHeaderCount}>
                 {classesForDay.length} {classesForDay.length === 1 ? 'class' : 'classes'}
               </Text>
@@ -332,8 +340,14 @@ export default function ScheduleScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <CalendarX size={28} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>No classes this day</Text>
-            <Text style={styles.emptySubtitle}>Try another date or clear your filters.</Text>
+            <Text style={styles.emptyTitle}>
+              {showBookedOnly ? 'No booked classes' : 'No classes this day'}
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              {showBookedOnly
+                ? 'Book a class first and it will appear here.'
+                : 'Try another date or clear your filters.'}
+            </Text>
           </View>
         }
         testID="schedule-list"
