@@ -131,6 +131,25 @@ export const [BookingsProvider, useBookings] = createContextHook(() => {
     [bookingRecords]
   );
 
+  /**
+   * Always-overwrite the manage URL for a booking — used when the WebView
+   * navigates to the real /c/{ref} manage page (where the cancel button lives)
+   * after the booking was already detected via green checkmark on an earlier page.
+   */
+  const updateBookingManageUrl = useCallback(
+    (item: Pick<PilatesClass, 'bookwhenEventId' | 'id'>, manageUrl: string) => {
+      const key = getBookingKey(item);
+      const current =
+        (queryClient.getQueryData<BookingRecord[]>(['bookings']) ?? []);
+      const exists = current.some((r) => r.id === key);
+      if (!exists) return;
+      const next = current.map((r) => r.id === key ? { ...r, manageUrl } : r);
+      console.log('[Bookings] Updated manageUrl to /c/ URL:', manageUrl.slice(0, 80));
+      setBookings(next);
+    },
+    [queryClient, setBookings]
+  );
+
   return useMemo(
     () => ({
       bookedIds,
@@ -139,8 +158,9 @@ export const [BookingsProvider, useBookings] = createContextHook(() => {
       markAsUnbooked,
       bookingRecords,
       getBookingManageUrl,
+      updateBookingManageUrl,
       isLoading: bookingsQuery.isLoading,
     }),
-    [bookedIds, isBooked, markAsBooked, markAsUnbooked, bookingRecords, getBookingManageUrl, bookingsQuery.isLoading]
+    [bookedIds, isBooked, markAsBooked, markAsUnbooked, bookingRecords, getBookingManageUrl, updateBookingManageUrl, bookingsQuery.isLoading]
   );
 });

@@ -325,7 +325,7 @@ export default function BookingWebViewScreen() {
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const classId = params.classId ?? '';
 
-  const { markAsBooked, markAsUnbooked, getBookingManageUrl } = useBookings();
+  const { markAsBooked, markAsUnbooked, getBookingManageUrl, updateBookingManageUrl } = useBookings();
 
   // If this class is already booked and we have a stored manage URL, use it
   // so the user lands on the manage/delete booking page from the email
@@ -371,8 +371,17 @@ export default function BookingWebViewScreen() {
       if (isCancellationUrl(nav.url)) {
         tryMarkCancelled();
       }
+      // Always update the manage URL when we land on a /c/{ref} page —
+      // this is the real manage-booking page where the cancel button lives.
+      // Even if tryMarkBooked already fired from an earlier green-checkmark
+      // detection on the event page, this ensures the stored manageUrl is correct.
+      if (bookwhenEventId || classId) {
+        if (nav.url.includes('/c/')) {
+          updateBookingManageUrl({ bookwhenEventId: bookwhenEventId || undefined, id: classId }, nav.url);
+        }
+      }
     },
-    [tryMarkBooked, tryMarkCancelled],
+    [tryMarkBooked, tryMarkCancelled, bookwhenEventId, classId, updateBookingManageUrl],
   );
 
   const handleMessage = useCallback(
