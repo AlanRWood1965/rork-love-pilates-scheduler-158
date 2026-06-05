@@ -77,13 +77,13 @@ export default function ClassDetailScreen() {
 
   const handleBookNow = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // When already booked, open the main schedule page so the user can see
-    // green ticks and manage/cancel their bookings. The event-specific page
-    // does not have a cancel button — only the schedule and /c/{ref} pages do.
+    // When already booked, open the event-specific page so Bookwhen can show
+    // the booking status and management options (reschedule/cancel) natively.
+    // The /c/{ref} manage page from emails doesn't show the cancel button in
+    // a WebView because it requires email-based auth — the event page works
+    // because it uses the shared WebView cookies from the booking session.
     let url: string;
-    if (booked) {
-      url = 'https://bookwhen.com/karenwoodpilates';
-    } else if (bookingUrl) {
+    if (bookingUrl) {
       url = bookingUrl;
     } else if (bookwhenEventId) {
       url = `https://bookwhen.com/karenwoodpilates/e/${bookwhenEventId}`;
