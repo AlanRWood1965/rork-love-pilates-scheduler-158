@@ -290,6 +290,7 @@ export default function ScheduleScreen() {
                       onPress={() => {
                         void Haptics.selectionAsync();
                         setSelectedType((prev) => prev === option ? null : option);
+                        setShowBookedOnly(null);
                       }}
                       style={[
                         styles.chip,
