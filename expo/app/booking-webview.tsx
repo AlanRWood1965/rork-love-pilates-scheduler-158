@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform, Alert }
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, WebViewNavigation } from 'react-native-webview';
-import { X, ChevronLeft, ChevronRight, RotateCw, CheckCircle2 } from 'lucide-react-native';
+import { X, ChevronLeft, ChevronRight, RotateCw, CheckCircle2, XCircle } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import Colors from '@/constants/colors';
@@ -24,9 +24,24 @@ const CONFIRMATION_PATTERNS = [
   'receipt',
 ];
 
+/** Patterns that indicate a cancelled booking on Bookwhen */
+const CANCELLATION_PATTERNS = [
+  'cancelled',
+  'cancel',
+  'cancellation',
+  'refund',
+  'refunded',
+  'cancellation-confirmed',
+];
+
 function isConfirmationUrl(url: string): boolean {
   const lower = url.toLowerCase();
   return CONFIRMATION_PATTERNS.some((pattern) => lower.includes(pattern));
+}
+
+function isCancellationUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  return CANCELLATION_PATTERNS.some((pattern) => lower.includes(pattern));
 }
 
 export default function BookingWebViewScreen() {
@@ -44,14 +59,16 @@ export default function BookingWebViewScreen() {
   const [canGoBack, setCanGoBack] = useState<boolean>(false);
   const [canGoForward, setCanGoForward] = useState<boolean>(false);
   const [bookingConfirmed, setBookingConfirmed] = useState<boolean>(false);
+  const [bookingCancelled, setBookingCancelled] = useState<boolean>(false);
 
   const url = params.url ?? 'https://bookwhen.com/karenwoodpilates';
   const title = params.title ?? 'Book Class';
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const classId = params.classId ?? '';
 
-  const { markAsBooked } = useBookings();
+  const { markAsBooked, markAsUnbooked } = useBookings();
   const markedRef = useRef(false);
+  const cancelledRef = useRef(false);
 
   const tryMarkBooked = useCallback(() => {
     if (markedRef.current) return;
@@ -63,12 +80,26 @@ export default function BookingWebViewScreen() {
     console.log('[BookingWebView] Booking confirmed via URL detection');
   }, [bookwhenEventId, classId, markAsBooked]);
 
+  const tryMarkCancelled = useCallback(() => {
+    if (cancelledRef.current) return;
+    if (!bookwhenEventId && !classId) return;
+    cancelledRef.current = true;
+    markedRef.current = true;
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    markAsUnbooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
+    setBookingCancelled(true);
+    console.log('[BookingWebView] Cancellation detected via URL detection');
+  }, [bookwhenEventId, classId, markAsUnbooked]);
+
   const handleNavigationChange = useCallback(
     (nav: WebViewNavigation) => {
       setCanGoBack(nav.canGoBack);
       setCanGoForward(nav.canGoForward);
-      if (!markedRef.current && isConfirmationUrl(nav.url)) {
+      if (isConfirmationUrl(nav.url)) {
         tryMarkBooked();
+      }
+      if (isCancellationUrl(nav.url)) {
+        tryMarkCancelled();
       }
     },
     [tryMarkBooked],
@@ -134,6 +165,12 @@ export default function BookingWebViewScreen() {
         <View style={styles.confirmedBanner}>
           <CheckCircle2 size={18} color={Colors.textLight} />
           <Text style={styles.confirmedText}>Booking confirmed!</Text>
+        </View>
+      )}
+      {bookingCancelled && (
+        <View style={styles.cancelledBanner}>
+          <XCircle size={18} color={Colors.textLight} />
+          <Text style={styles.confirmedText}>Booking cancelled</Text>
         </View>
       )}
 
@@ -234,6 +271,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#2E7D32',
+    paddingVertical: 10,
+  },
+  cancelledBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#C62828',
     paddingVertical: 10,
   },
   confirmedText: {

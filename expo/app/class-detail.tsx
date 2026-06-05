@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Info,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
@@ -222,12 +223,19 @@ export default function ClassDetailScreen() {
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
         {booked && (
-          <View style={styles.bookedInfoBar}>
+          <Pressable
+            onPress={handleBookNow}
+            style={({ pressed }) => [styles.bookedInfoBar, pressed && { opacity: 0.7 }]}
+          >
             <CheckCircle2 size={16} color={Colors.success} />
             <Text style={styles.bookedInfoBarText}>
               You booked this class
             </Text>
-          </View>
+            <RefreshCw size={14} color={Colors.success} style={{ marginLeft: 4 }} />
+            <Text style={styles.bookedInfoBarHint}>
+              Tap to verify
+            </Text>
+          </Pressable>
         )}
         <Pressable
           onPress={handleBookNow}
@@ -441,5 +449,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700' as const,
     color: Colors.success,
+  },
+  bookedInfoBarHint: {
+    fontSize: 11,
+    fontWeight: '500' as const,
+    color: Colors.success + '99',
   },
 });
