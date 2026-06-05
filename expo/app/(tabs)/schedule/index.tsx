@@ -269,6 +269,7 @@ export default function ScheduleScreen() {
                 <Pressable
                   onPress={() => {
                     void Haptics.selectionAsync();
+                    setSelectedType(null);
                     setShowBookedOnly((prev) => prev ? null : 'Booked');
                   }}
                   style={[
@@ -280,7 +281,7 @@ export default function ScheduleScreen() {
                     Booked
                   </Text>
                 </Pressable>
-                {/* Class type chips — independent from Booked */}
+                {/* Class type chips — mutually exclusive with Booked */}
                 {CLASS_TYPES.map((option) => {
                   const isActive = selectedType === option;
                   const chipColor = classTypeColorMap[option] ?? Colors.primary;
@@ -289,6 +290,7 @@ export default function ScheduleScreen() {
                       key={option}
                       onPress={() => {
                         void Haptics.selectionAsync();
+                        setShowBookedOnly(null);
                         setSelectedType((prev) => prev === option ? null : option);
                       }}
                       style={[
