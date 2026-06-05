@@ -65,7 +65,7 @@ export default function ClassDetailScreen() {
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const bookingUrl = params.bookingUrl ?? '';
 
-  const { isBooked, markAsUnbooked } = useBookings();
+  const { isBooked, markAsUnbooked, getBookingManageUrl } = useBookings();
   const booked = isBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
 
   const dateStr = params.date ?? '';
@@ -77,13 +77,21 @@ export default function ClassDetailScreen() {
 
   const handleBookNow = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // When already booked, open the event-specific page so Bookwhen can show
-    // the booking status and management options (reschedule/cancel) natively.
-    // The /c/{ref} manage page from emails doesn't show the cancel button in
-    // a WebView because it requires email-based auth — the event page works
-    // because it uses the shared WebView cookies from the booking session.
     let url: string;
-    if (bookingUrl) {
+    if (booked) {
+      // For booked classes, prioritise the stored manage URL (/c/{ref})
+      // which is the same booking confirmation page Bookwhen sends via email.
+      const manageUrl = getBookingManageUrl({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
+      if (manageUrl?.includes('/c/')) {
+        url = manageUrl;
+      } else if (bookingUrl) {
+        url = bookingUrl;
+      } else if (bookwhenEventId) {
+        url = `https://bookwhen.com/karenwoodpilates/e/${bookwhenEventId}`;
+      } else {
+        url = 'https://bookwhen.com/karenwoodpilates';
+      }
+    } else if (bookingUrl) {
       url = bookingUrl;
     } else if (bookwhenEventId) {
       url = `https://bookwhen.com/karenwoodpilates/e/${bookwhenEventId}`;
@@ -91,7 +99,7 @@ export default function ClassDetailScreen() {
       url = 'https://bookwhen.com/karenwoodpilates';
     }
     console.log('[ClassDetail] Opening booking URL in WebView:', url);
-    const title = booked ? 'Manage Booking' : isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
+    const title = booked ? 'Your Booking' : isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
     router.push({
       pathname: '/booking-webview',
       params: {
@@ -101,7 +109,7 @@ export default function ClassDetailScreen() {
         classId,
       },
     });
-  }, [bookingUrl, bookwhenEventId, router, isFull, classType, classId, booked]);
+  }, [bookingUrl, bookwhenEventId, router, isFull, classType, classId, booked, getBookingManageUrl]);
 
   const handleClose = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
