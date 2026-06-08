@@ -64,7 +64,7 @@ export default function ClassDetailScreen() {
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const bookingUrl = params.bookingUrl ?? '';
 
-  const { isBooked, markAsUnbooked } = useBookings();
+  const { isBooked, markAsUnbooked, getBookingManageUrl } = useBookings();
   const booked = isBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
 
   const dateStr = params.date ?? '';
@@ -107,19 +107,40 @@ export default function ClassDetailScreen() {
 
   const handleUnbook = useCallback(() => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    const manageUrl = getBookingManageUrl({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
+    const isValidManageUrl = manageUrl?.includes('/c/');
+    const cancelUrl = isValidManageUrl ? manageUrl! : 'https://bookwhen.com/karenwoodpilates';
+
     Alert.alert(
-      'Remove booking',
-      'Did you cancel this class on Bookwhen? This will remove it from your booked list in the app.',
+      'Manage booking',
+      isValidManageUrl
+        ? 'Cancel this booking on Bookwhen, or remove it from the app only.'
+        : 'Open the schedule page to manage your bookings on Bookwhen, or remove this booking from the app only.',
       [
-        { text: 'Keep', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Remove',
+          text: isValidManageUrl ? 'Cancel on Bookwhen' : 'Open schedule',
+          onPress: () => {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.push({
+              pathname: '/booking-webview',
+              params: {
+                url: cancelUrl,
+                title: 'Manage Booking',
+                bookwhenEventId: bookwhenEventId || '',
+                classId,
+              },
+            });
+          },
+        },
+        {
+          text: 'Remove from app only',
           style: 'destructive',
           onPress: () => markAsUnbooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId }),
         },
       ],
     );
-  }, [bookwhenEventId, classId, markAsUnbooked]);
+  }, [bookwhenEventId, classId, markAsUnbooked, getBookingManageUrl, router]);
 
   return (
     <View style={styles.container}>
