@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Platform, 
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Heart, Trash2, ChevronRight, CalendarX } from 'lucide-react-native';
+import { Heart, Trash2, ChevronRight, CalendarX, CheckCircle2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 
@@ -82,7 +82,7 @@ export default function ScheduleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { favouriteKeys, clearFavourites } = useFavourites();
-  const { isBooked } = useBookings();
+  const { isBooked, bookingRecords } = useBookings();
 
   const [selectedDate, setSelectedDate] = useState<string>(getTodayStr());
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -171,6 +171,19 @@ export default function ScheduleScreen() {
 
   const hasActiveFilters = selectedType !== null || selectedLevel !== null || showBookedOnly !== null;
 
+  const handleViewBookings = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push({
+      pathname: '/booking-webview',
+      params: {
+        url: 'https://my.bookwhen.com',
+        title: 'Customer Portal',
+        bookwhenEventId: '',
+        classId: '',
+      },
+    });
+  }, [router]);
+
   const handleClearFilters = useCallback(() => {
     void Haptics.selectionAsync();
     setSelectedType(null);
@@ -198,6 +211,18 @@ export default function ScheduleScreen() {
         />
         <Text style={styles.topTitle}>Schedule</Text>
         <Text style={styles.topSubtitle}>Choose a day and pick your class</Text>
+        {bookingRecords.length > 0 && (
+          <Pressable
+            onPress={handleViewBookings}
+            style={({ pressed }) => [
+              styles.viewBookingsBtn,
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <Text style={styles.viewBookingsBtnText}>View Your Bookings</Text>
+            <CheckCircle2 size={16} color={Colors.success} />
+          </Pressable>
+        )}
       </View>
 
       <FlatList
@@ -384,6 +409,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textMuted,
     marginTop: 2,
+  },
+  viewBookingsBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    backgroundColor: Colors.surfaceAlt,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
+  viewBookingsBtnText: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: Colors.primary,
   },
   favSection: {
     paddingTop: 14,

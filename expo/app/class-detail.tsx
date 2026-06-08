@@ -78,8 +78,8 @@ export default function ClassDetailScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     let url: string;
     if (booked) {
-      // Take booked users to the schedule page so they can see green ticks on their classes.
-      url = 'https://bookwhen.com/karenwoodpilates';
+      // Take booked users to the customer portal to manage their bookings.
+      url = 'https://my.bookwhen.com';
     } else if (bookingUrl) {
       url = bookingUrl;
     } else if (bookwhenEventId) {
@@ -88,7 +88,7 @@ export default function ClassDetailScreen() {
       url = 'https://bookwhen.com/karenwoodpilates';
     }
     console.log('[ClassDetail] Opening booking URL in WebView:', url);
-    const title = booked ? 'Your Bookings' : isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
+    const title = booked ? 'Customer Portal' : isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
     router.push({
       pathname: '/booking-webview',
       params: {
