@@ -161,12 +161,7 @@ export default function ClassDetailScreen() {
             style={({ pressed }) => [styles.bookedBanner, pressed && { opacity: 0.8 }]}
           >
             <CheckCircle2 size={18} color={Colors.textLight} />
-            <View style={styles.bookedBannerTextWrap}>
-              <Text style={styles.bookedBannerTitle}>You've already booked this class</Text>
-              <Text style={styles.bookedBannerSubtitle}>
-                Long-press to remove. You can still join the waiting list or re-visit your booking page.
-              </Text>
-            </View>
+            <Text style={styles.bookedBannerTitle}>You've booked this class. Long press to remove.</Text>
           </Pressable>
         )}
 
@@ -434,19 +429,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
   },
-  bookedBannerTextWrap: {
-    flex: 1,
-  },
   bookedBannerTitle: {
     fontSize: 14,
     fontWeight: '700' as const,
     color: Colors.textLight,
-    marginBottom: 4,
-  },
-  bookedBannerSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-    lineHeight: 17,
+    flex: 1,
   },
   bookedInfoBar: {
     flexDirection: 'row',
