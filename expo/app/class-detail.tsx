@@ -64,7 +64,7 @@ export default function ClassDetailScreen() {
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const bookingUrl = params.bookingUrl ?? '';
 
-  const { isBooked, markAsUnbooked, getBookingManageUrl } = useBookings();
+  const { isBooked, markAsUnbooked } = useBookings();
   const booked = isBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
 
   const dateStr = params.date ?? '';
@@ -78,18 +78,8 @@ export default function ClassDetailScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     let url: string;
     if (booked) {
-      // For booked classes, prioritise the stored manage URL (/c/{ref})
-      // which is the same booking confirmation page Bookwhen sends via email.
-      const manageUrl = getBookingManageUrl({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
-      if (manageUrl?.includes('/c/')) {
-        url = manageUrl;
-      } else if (bookingUrl) {
-        url = bookingUrl;
-      } else if (bookwhenEventId) {
-        url = `https://bookwhen.com/karenwoodpilates/e/${bookwhenEventId}`;
-      } else {
-        url = 'https://bookwhen.com/karenwoodpilates';
-      }
+      // Take booked users to the schedule page so they can see green ticks on their classes.
+      url = 'https://bookwhen.com/karenwoodpilates';
     } else if (bookingUrl) {
       url = bookingUrl;
     } else if (bookwhenEventId) {
@@ -98,7 +88,7 @@ export default function ClassDetailScreen() {
       url = 'https://bookwhen.com/karenwoodpilates';
     }
     console.log('[ClassDetail] Opening booking URL in WebView:', url);
-    const title = booked ? 'Your Booking' : isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
+    const title = booked ? 'Your Bookings' : isFull ? 'Join Waiting List' : `Book ${classType} Pilates`;
     router.push({
       pathname: '/booking-webview',
       params: {
@@ -108,7 +98,7 @@ export default function ClassDetailScreen() {
         classId,
       },
     });
-  }, [bookingUrl, bookwhenEventId, router, isFull, classType, classId, booked, getBookingManageUrl]);
+  }, [bookingUrl, bookwhenEventId, router, isFull, classType, classId, booked]);
 
   const handleClose = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -245,7 +235,11 @@ export default function ClassDetailScreen() {
           <Text style={[styles.bookButtonText, booked && { color }]}>
             {isFull ? 'Join the Waiting List' : booked ? 'View Your Booking' : 'Book Now'}
           </Text>
-          <ExternalLink size={16} color={booked ? color : Colors.textLight} />
+          {booked ? (
+            <CheckCircle2 size={16} color={Colors.success} />
+          ) : (
+            <ExternalLink size={16} color={Colors.textLight} />
+          )}
         </Pressable>
       </View>
     </View>
