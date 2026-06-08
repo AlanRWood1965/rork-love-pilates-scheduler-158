@@ -82,12 +82,11 @@ export default function ScheduleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { favouriteKeys, clearFavourites } = useFavourites();
-  const { isBooked, bookingRecords } = useBookings();
+  const { bookingRecords } = useBookings();
 
   const [selectedDate, setSelectedDate] = useState<string>(getTodayStr());
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [showBookedOnly, setShowBookedOnly] = useState<string | null>(null);
 
   const dateItems = useMemo(() => buildDateItems(30), []);
 
@@ -114,18 +113,11 @@ export default function ScheduleScreen() {
 
   const classesForDay = useMemo(() => {
     return schedule
-      .filter((c) => (showBookedOnly ? true : c.date === selectedDate))
+      .filter((c) => c.date === selectedDate)
       .filter((c) => (selectedType ? c.classType === selectedType : true))
       .filter((c) => (selectedLevel ? c.level === selectedLevel : true))
-      .filter((c) => (showBookedOnly ? isBooked(c) : true))
-      .sort((a, b) => {
-        if (showBookedOnly) {
-          const dateComp = a.date.localeCompare(b.date);
-          if (dateComp !== 0) return dateComp;
-        }
-        return a.time.localeCompare(b.time);
-      });
-  }, [schedule, selectedDate, selectedType, selectedLevel, showBookedOnly, isBooked]);
+      .sort((a, b) => a.time.localeCompare(b.time));
+  }, [schedule, selectedDate, selectedType, selectedLevel]);
 
   const favouriteItems = useMemo(() => {
     return favouriteKeys.map((key) => {
@@ -169,7 +161,7 @@ export default function ScheduleScreen() {
     clearFavourites();
   }, [clearFavourites]);
 
-  const hasActiveFilters = selectedType !== null || selectedLevel !== null || showBookedOnly !== null;
+  const hasActiveFilters = selectedType !== null || selectedLevel !== null;
 
   const handleViewBookings = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -188,7 +180,6 @@ export default function ScheduleScreen() {
     void Haptics.selectionAsync();
     setSelectedType(null);
     setSelectedLevel(null);
-    setShowBookedOnly(null);
   }, []);
 
   const handleRefresh = useCallback(() => {
@@ -196,8 +187,8 @@ export default function ScheduleScreen() {
   }, [refetch]);
 
   const renderItem = useCallback(({ item }: { item: PilatesClass }) => {
-    return <ClassCard item={item} onPress={handleClassPress} showDate={showBookedOnly !== null} />;
-  }, [handleClassPress, showBookedOnly]);
+    return <ClassCard item={item} onPress={handleClassPress} />;
+  }, [handleClassPress]);
 
   const headerTop = Platform.OS === 'web' ? 12 : insets.top + 8;
 
@@ -296,24 +287,7 @@ export default function ScheduleScreen() {
                 decelerationRate="fast"
                 snapToInterval={undefined}
               >
-                {/* Booked chip — mutually exclusive with class type AND level */}
-                <Pressable
-                  onPress={() => {
-                    void Haptics.selectionAsync();
-                    setSelectedType(null);
-                    setSelectedLevel(null);
-                    setShowBookedOnly((prev) => prev ? null : 'Booked');
-                  }}
-                  style={[
-                    styles.chip,
-                    showBookedOnly && { backgroundColor: Colors.success, borderColor: Colors.success },
-                  ]}
-                >
-                  <Text style={[styles.chipText, showBookedOnly && styles.chipTextActive]}>
-                    Booked
-                  </Text>
-                </Pressable>
-                {/* Class type chips — mutually exclusive with Booked */}
+                {/* Class type chips */}
                 {CLASS_TYPES.map((option) => {
                   const isActive = selectedType === option;
                   const chipColor = classTypeColorMap[option] ?? Colors.primary;
@@ -322,7 +296,6 @@ export default function ScheduleScreen() {
                       key={option}
                       onPress={() => {
                         void Haptics.selectionAsync();
-                        setShowBookedOnly(null);
                         setSelectedType((prev) => prev === option ? null : option);
                       }}
                       style={[
@@ -343,9 +316,6 @@ export default function ScheduleScreen() {
                 options={LEVELS}
                 selected={selectedLevel}
                 onSelect={(option) => {
-                  if (option !== null) {
-                    setShowBookedOnly(null);
-                  }
                   setSelectedLevel(option);
                 }}
                 colorMap={levelColorMap}
@@ -354,7 +324,7 @@ export default function ScheduleScreen() {
 
             <View style={styles.dayHeader}>
               <Text style={styles.dayHeaderText}>
-                {showBookedOnly ? 'Your Booked Classes' : formatHeading(selectedDate)}
+                {formatHeading(selectedDate)}
               </Text>
               <Text style={styles.dayHeaderCount}>
                 {classesForDay.length} {classesForDay.length === 1 ? 'class' : 'classes'}
@@ -365,13 +335,9 @@ export default function ScheduleScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <CalendarX size={28} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>
-              {showBookedOnly ? 'No booked classes' : 'No classes this day'}
-            </Text>
+            <Text style={styles.emptyTitle}>No classes this day</Text>
             <Text style={styles.emptySubtitle}>
-              {showBookedOnly
-                ? 'Book a class first and it will appear here.'
-                : 'Try another date or clear your filters.'}
+              Try another date or clear your filters.
             </Text>
           </View>
         }
