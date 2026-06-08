@@ -11,7 +11,6 @@ import {
   ExternalLink,
   Info,
   CheckCircle2,
-  RefreshCw,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
@@ -233,21 +232,6 @@ export default function ClassDetailScreen() {
       </ScrollView>
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        {booked && (
-          <Pressable
-            onPress={handleBookNow}
-            style={({ pressed }) => [styles.bookedInfoBar, pressed && { opacity: 0.7 }]}
-          >
-            <CheckCircle2 size={16} color={Colors.success} />
-            <Text style={styles.bookedInfoBarText}>
-              You booked this class
-            </Text>
-            <RefreshCw size={14} color={Colors.success} style={{ marginLeft: 4 }} />
-            <Text style={styles.bookedInfoBarHint}>
-              Tap to verify
-            </Text>
-          </Pressable>
-        )}
         <Pressable
           onPress={handleBookNow}
           style={({ pressed }) => [
@@ -446,25 +430,5 @@ const styles = StyleSheet.create({
     fontWeight: '500' as const,
     color: 'rgba(255,255,255,0.85)',
     marginTop: 2,
-  },
-  bookedInfoBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    borderRadius: 12,
-    marginBottom: 10,
-    backgroundColor: Colors.success + '14',
-  },
-  bookedInfoBarText: {
-    fontSize: 13,
-    fontWeight: '700' as const,
-    color: Colors.success,
-  },
-  bookedInfoBarHint: {
-    fontSize: 11,
-    fontWeight: '500' as const,
-    color: Colors.success + '99',
   },
 });
