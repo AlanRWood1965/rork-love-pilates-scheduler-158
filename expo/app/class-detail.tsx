@@ -161,7 +161,10 @@ export default function ClassDetailScreen() {
             style={({ pressed }) => [styles.bookedBanner, pressed && { opacity: 0.8 }]}
           >
             <CheckCircle2 size={18} color={Colors.textLight} />
-            <Text style={styles.bookedBannerTitle}>You've booked this class. Long press to remove.</Text>
+            <View style={styles.bookedBannerTextCol}>
+              <Text style={styles.bookedBannerTitle}>You've booked this class</Text>
+              <Text style={styles.bookedBannerSubtitle}>Long press to remove</Text>
+            </View>
           </Pressable>
         )}
 
@@ -429,11 +432,20 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
   },
+  bookedBannerTextCol: {
+    flex: 1,
+    flexDirection: 'column',
+  },
   bookedBannerTitle: {
     fontSize: 14,
     fontWeight: '700' as const,
     color: Colors.textLight,
-    flex: 1,
+  },
+  bookedBannerSubtitle: {
+    fontSize: 12,
+    fontWeight: '500' as const,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
   },
   bookedInfoBar: {
     flexDirection: 'row',
