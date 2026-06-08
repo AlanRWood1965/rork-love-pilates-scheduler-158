@@ -110,11 +110,11 @@ export default function ClassDetailScreen() {
 
     Alert.alert(
       'Manage booking',
-      'Visit the Bookwhen customer portal to cancel or manage your bookings, or remove this booking from the app only.',
+      '',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Customer Portal',
+          text: 'Cancel/Manage Booking in Customer Portal',
           onPress: () => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             router.push({
@@ -129,7 +129,7 @@ export default function ClassDetailScreen() {
           },
         },
         {
-          text: 'Remove from app only',
+          text: 'Cancel in app',
           style: 'destructive',
           onPress: () => markAsUnbooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId }),
         },
