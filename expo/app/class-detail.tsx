@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -64,7 +64,7 @@ export default function ClassDetailScreen() {
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const bookingUrl = params.bookingUrl ?? '';
 
-  const { isBooked, markAsUnbooked } = useBookings();
+  const { isBooked } = useBookings();
   const booked = isBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
 
   const dateStr = params.date ?? '';
@@ -105,38 +105,6 @@ export default function ClassDetailScreen() {
     router.back();
   }, [router]);
 
-  const handleUnbook = useCallback(() => {
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-
-    Alert.alert(
-      'Manage booking',
-      '',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Cancel/Manage Booking in Customer Portal',
-          onPress: () => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push({
-              pathname: '/booking-webview',
-              params: {
-                url: 'https://my.bookwhen.com',
-                title: 'Customer Portal',
-                bookwhenEventId: bookwhenEventId || '',
-                classId,
-              },
-            });
-          },
-        },
-        {
-          text: 'Cancel in app',
-          style: 'destructive',
-          onPress: () => markAsUnbooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId }),
-        },
-      ],
-    );
-  }, [bookwhenEventId, classId, markAsUnbooked, router]);
-
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -160,17 +128,10 @@ export default function ClassDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {booked && (
-          <Pressable
-            onLongPress={handleUnbook}
-            delayLongPress={600}
-            style={({ pressed }) => [styles.bookedBanner, pressed && { opacity: 0.8 }]}
-          >
+          <View style={styles.bookedBanner}>
             <CheckCircle2 size={18} color={Colors.textLight} />
-            <View style={styles.bookedBannerTextCol}>
-              <Text style={styles.bookedBannerTitle}>You've booked this class</Text>
-              <Text style={styles.bookedBannerSubtitle}>Long press to remove</Text>
-            </View>
-          </Pressable>
+            <Text style={styles.bookedBannerTitle}>You've booked this class</Text>
+          </View>
         )}
 
         <View style={styles.detailsGrid}>
@@ -418,7 +379,7 @@ const styles = StyleSheet.create({
   },
   bookedBanner: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 12,
     marginHorizontal: 20,
     marginTop: 16,
@@ -426,19 +387,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
   },
-  bookedBannerTextCol: {
-    flex: 1,
-    flexDirection: 'column',
-  },
   bookedBannerTitle: {
     fontSize: 14,
     fontWeight: '700' as const,
     color: Colors.textLight,
-  },
-  bookedBannerSubtitle: {
-    fontSize: 12,
-    fontWeight: '500' as const,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
   },
 });
