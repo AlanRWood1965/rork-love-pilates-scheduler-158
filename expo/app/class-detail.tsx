@@ -233,7 +233,7 @@ export default function ClassDetailScreen() {
           ]}
         >
           <Text style={[styles.bookButtonText, booked && { color }]}>
-            {isFull ? 'Join the Waiting List' : booked ? 'View Your Booking' : 'Book Now'}
+            {isFull ? 'Join the Waiting List' : booked ? 'View Your Bookings' : 'Book Now'}
           </Text>
           {booked ? (
             <CheckCircle2 size={16} color={Colors.success} />
