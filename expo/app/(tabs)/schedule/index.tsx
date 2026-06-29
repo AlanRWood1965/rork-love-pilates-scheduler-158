@@ -12,7 +12,7 @@ import { PilatesClass, ClassType, ClassLevel } from '@/types';
 import { fetchBookwhenEvents, getCachedEventsForInitialData } from '@/services/bookwhen';
 import { generateSchedule } from '@/mocks/classes';
 import { useFavourites, getFavouriteKey } from '@/providers/FavouritesProvider';
-import { useBookings } from '@/providers/BookingsProvider';
+
 import ClassCard from '@/components/ClassCard';
 import DateSelector from '@/components/DateSelector';
 import FilterChips from '@/components/FilterChips';
@@ -82,8 +82,6 @@ export default function ScheduleScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { favouriteKeys, clearFavourites } = useFavourites();
-  const { bookingRecords } = useBookings();
-
   const [selectedDate, setSelectedDate] = useState<string>(getTodayStr());
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
@@ -202,18 +200,16 @@ export default function ScheduleScreen() {
         />
         <Text style={styles.topTitle}>Schedule</Text>
         <Text style={styles.topSubtitle}>Choose a day and pick your class</Text>
-        {bookingRecords.length > 0 && (
-          <Pressable
-            onPress={handleViewBookings}
-            style={({ pressed }) => [
-              styles.viewBookingsBtn,
-              pressed && { opacity: 0.85 },
-            ]}
-          >
-            <Text style={styles.viewBookingsBtnText}>View Your Bookings</Text>
-            <CheckCircle2 size={16} color={Colors.success} />
-          </Pressable>
-        )}
+        <Pressable
+          onPress={handleViewBookings}
+          style={({ pressed }) => [
+            styles.viewBookingsBtn,
+            pressed && { opacity: 0.85 },
+          ]}
+        >
+          <Text style={styles.viewBookingsBtnText}>View Your Bookings</Text>
+          <CheckCircle2 size={16} color={Colors.success} />
+        </Pressable>
       </View>
 
       <FlatList
