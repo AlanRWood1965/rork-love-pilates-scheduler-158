@@ -109,11 +109,11 @@ export default function ClassDetailScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Reset Booking',
-      'This will remove your booking for this class.',
+      'Reset Booking',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reset',
+          text: 'Reset Booking',
           style: 'destructive',
           onPress: () => {
             markAsUnbooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
