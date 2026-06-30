@@ -148,8 +148,11 @@ export default function ClassDetailScreen() {
         {booked && (
           <Pressable onLongPress={handleResetBooking} delayLongPress={400}>
             <View style={styles.bookedBanner}>
-              <CheckCircle2 size={18} color={Colors.textLight} />
-              <Text style={styles.bookedBannerTitle}>You've booked this class</Text>
+              <CheckCircle2 size={20} color={Colors.textLight} />
+              <View style={styles.bookedBannerTextGroup}>
+                <Text style={styles.bookedBannerTitle}>You've booked this class</Text>
+                <Text style={styles.bookedBannerSubtitle}>Long press to reset</Text>
+              </View>
             </View>
           </Pressable>
         )}
@@ -407,9 +410,18 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
   },
+  bookedBannerTextGroup: {
+    flex: 1,
+    gap: 2,
+  },
   bookedBannerTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700' as const,
     color: Colors.textLight,
+  },
+  bookedBannerSubtitle: {
+    fontSize: 12,
+    fontWeight: '500' as const,
+    color: 'rgba(255,255,255,0.8)',
   },
 });
