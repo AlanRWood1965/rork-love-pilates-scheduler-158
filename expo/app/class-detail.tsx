@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -64,7 +64,7 @@ export default function ClassDetailScreen() {
   const bookwhenEventId = params.bookwhenEventId ?? '';
   const bookingUrl = params.bookingUrl ?? '';
 
-  const { isBooked } = useBookings();
+  const { isBooked, markAsUnbooked } = useBookings();
   const booked = isBooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
 
   const dateStr = params.date ?? '';
@@ -105,6 +105,24 @@ export default function ClassDetailScreen() {
     router.back();
   }, [router]);
 
+  const handleResetBooking = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      'Reset Booking',
+      'This will remove your booking for this class.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            markAsUnbooked({ bookwhenEventId: bookwhenEventId || undefined, id: classId });
+          },
+        },
+      ],
+    );
+  }, [markAsUnbooked, bookwhenEventId, classId]);
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -128,10 +146,12 @@ export default function ClassDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {booked && (
-          <View style={styles.bookedBanner}>
-            <CheckCircle2 size={18} color={Colors.textLight} />
-            <Text style={styles.bookedBannerTitle}>You've booked this class</Text>
-          </View>
+          <Pressable onLongPress={handleResetBooking} delayLongPress={400}>
+            <View style={styles.bookedBanner}>
+              <CheckCircle2 size={18} color={Colors.textLight} />
+              <Text style={styles.bookedBannerTitle}>You've booked this class</Text>
+            </View>
+          </Pressable>
         )}
 
         <View style={styles.detailsGrid}>
