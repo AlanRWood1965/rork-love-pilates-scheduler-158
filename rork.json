@@ -10,6 +10,11 @@
       "name": "Love Pilates",
       "path": "expo",
       "framework": "react-native"
+    },
+    {
+      "name": "Love Pilates",
+      "path": "android",
+      "framework": "kotlin"
     }
   ]
 }
